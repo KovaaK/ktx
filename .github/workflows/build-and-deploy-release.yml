@@ -1,10 +1,11 @@
 name: build and deploy release
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - '*'
 jobs:
   build:
-    if: github.repository == 'QW-Group/ktx'
+    if: github.repository == 'KovaaK/ktx'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -37,7 +38,7 @@ jobs:
            ext: ".dll"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare Build Environemnt
         run: |
              sudo apt-get update
@@ -50,24 +51,48 @@ jobs:
       - name: Create checksum
         run: |
              md5sum build/${{ matrix.target }}/qwprogs${{ matrix.ext }} > build/${{ matrix.target }}/qwprogs.md5
-      - name: Setup SSH
+      - name: Create Release Asset
+        run: |
+             mkdir -p release/${{ matrix.os }}/${{ matrix.arch }}
+             cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} release/${{ matrix.os }}/${{ matrix.arch }}/qwprogs${{ matrix.ext }}
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os }}_${{ matrix.arch }}
+          path:
+            build/${{ matrix.target }}/qwprogs${{ matrix.ext }}
+  create:
+    needs: build
+    if: github.repository == 'KovaaK/ktx'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: release
+      - name: list
+        run:  | 
+             find ./
+      - name: Create Release Asset
+        run: |
+          zip -r release.zip release
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        run: |
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
-      - name: Set date
-        run: |
-          sudo timedatectl set-timezone Europe/Amsterdam
-          echo "DATE=$(date "+%Y%m%d-%H%M%S")" >> $GITHUB_ENV
-      - name: Deploy
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
         env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        run: |
-             mkdir -p upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}
-             mkdir -p upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}
-             cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}/qwprogs${{ matrix.ext }}
-             cp build/${{ matrix.target }}/qwprogs.md5 upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}/qwprogs.md5
-             cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}/qwprogs${{ matrix.ext }}
-             cp build/${{ matrix.target }}/qwprogs.md5 upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}/qwprogs.md5
-             sftp -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/releases <<< $'put -rp upload/releases/*'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./release.zip
+          asset_name: release.zip
+          asset_content_type: application/zip

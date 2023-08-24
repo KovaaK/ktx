@@ -699,8 +699,11 @@ void PainSound()
 	if (self->axhitme == 1)
 	{
 		self->axhitme = 0;
-		sound(self, CHAN_VOICE, "player/axhit1.wav", 1, ATTN_NORM);
-
+/*		if (cvar("k_smashmode"))
+//			sound(self, CHAN_VOICE, "player/bathit.wav", 1, ATTN_NORM);
+		else */
+			sound(self, CHAN_VOICE, "player/axhit1.wav", 1, ATTN_NORM);
+		
 		return;
 	}
 

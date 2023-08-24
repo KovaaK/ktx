@@ -1200,6 +1200,16 @@ typedef struct gedict_s
 // {
 	qbool spawn_effect_queued;
 // }
+
+// { smashmode
+	struct gedict_s* last_attacker;		// last player to attack us
+	float grab_time;					// lock-out timer for grabbing a ledge
+	qbool is_grabbing; 					// state of actually grabbing a ledge
+	qbool wants_to_grab;				// true when player is holding +grab or has autograb on
+	qbool has_double_jump;				
+	int last_deathtype;					// on obit, deathtype will be trigger_hurt or tfrag, so we have to track the previous instance of damage that knocked us back.
+// }
+
 } gedict_t;
 
 typedef enum

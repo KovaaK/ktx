@@ -2137,7 +2137,19 @@ void PutClientInServer(void)
 			self->s.v.ammo_rockets = 255;
 			self->s.v.ammo_cells = 255;
 
-			self->s.v.armorvalue = 200;
+			if (cvar("k_smashmode"))
+			{
+				dmm4_invinc_time = -1; // means off
+				self->s.v.armorvalue = 0;
+				self->last_attacker = self;
+				if (!iKey(self, "disableautograb")) // reset state of grab according to player pref
+					self->wants_to_grab = true;
+				else
+					self->wants_to_grab = false;
+			}
+			else
+				self->s.v.armorvalue = 200;
+			
 			self->s.v.armortype = 0.8;
 			self->s.v.health = 250;
 
@@ -2243,7 +2255,7 @@ void PutClientInServer(void)
 	}
 
 	// remove particular weapons in dmm4
-	if (deathmatch == 4 && match_in_progress == 2)
+	if (deathmatch == 4 && match_in_progress == 2 && !cvar("k_smashmode"))
 	{
 		int k_disallow_weapons = (int)cvar("k_disallow_weapons") & DA_WPNS;
 
@@ -2450,6 +2462,31 @@ void PlayerDeathThink()
 	k_respawn(self, true);
 }
 
+void SmashDoubleJump()
+{
+	vec3_t source, dest;
+	
+	if (cvar ("k_smashmode") && self->has_double_jump && ((int)(self->s.v.flags)) & FL_JUMPRELEASED)
+	{
+		// Don't let the player use this to cancel upwards velocity
+		if (self->s.v.velocity[2] > 100)
+			return;
+		// Trace a line below us to make sure the player isn't buffering a bhop
+		trap_makevectors(self->s.v.v_angle);
+		VectorCopy(self->s.v.origin, source);
+		source[2] += 16;
+		VectorScale(g_globalvars.v_up, -64, dest);
+		VectorAdd(dest, source, dest);
+		traceline(PASSVEC3(source), PASSVEC3(dest), false, self);
+		if (g_globalvars.trace_fraction != 1.0)
+			return;
+
+		self->has_double_jump = false;
+		self->s.v.velocity[2] = 270;
+		sound(self, CHAN_BODY, "player/plyrdjmp.wav", 1, ATTN_NORM);
+	}
+}
+
 void PlayerJump()
 {
 	//vec3_t start, end;
@@ -2458,6 +2495,18 @@ void PlayerJump()
 	{
 		self->s.v.velocity[2] = -270; // discard +jump till 50 ms after respawn, like ktpro
 		self->s.v.flags = (int)self->s.v.flags & ~FL_JUMPRELEASED;
+
+		return;
+	}
+
+	if (cvar("k_smashmode") && self->is_grabbing)
+ 	{
+		self->is_grabbing = false;
+		self->grab_time = g_globalvars.time + 0.2;
+		self->s.v.flags = (int)self->s.v.flags & ~FL_JUMPRELEASED;
+		self->s.v.velocity[2] = 500;
+		self->has_double_jump = true;
+		sound(self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
 
 		return;
 	}
@@ -2494,6 +2543,7 @@ void PlayerJump()
 
 	if (!(((int)(self->s.v.flags)) & FL_ONGROUND))
 	{
+		SmashDoubleJump();
 		return;
 	}
 
@@ -3471,6 +3521,124 @@ void ZeroFpsStats()
 
 void mv_playback();
 
+void Grab()
+{
+	self->has_double_jump = true;
+	self->is_grabbing = true;
+	self->grab_time = g_globalvars.time + 1; // block grab for 1s
+}
+
+void CheckLedgeGrab()
+{
+	vec3_t source, dest, dest2;
+
+	if (((int)(self->s.v.flags)) & FL_ONGROUND)
+		return;
+		
+	// Trace a line from the player's crosshair forward 32 units.  If we hit something, give up
+	trap_makevectors(self->s.v.v_angle);
+	VectorCopy(self->s.v.origin, source);
+	source[2] += 48;
+	VectorScale(g_globalvars.v_forward, 32, dest);
+	
+	dest[2] = 0;
+	VectorNormalize(dest);
+	VectorScale(dest, 32, dest);
+	
+	VectorAdd(dest, source, dest);
+	traceline(PASSVEC3(source), PASSVEC3(dest), false, self);
+	if (g_globalvars.trace_fraction != 1.0)
+		return;	
+
+	// Trace the same thing but 32 units lower.  
+	trap_makevectors(self->s.v.v_angle);
+	VectorCopy(self->s.v.origin, source);
+	source[2] += 16;
+	VectorScale(g_globalvars.v_forward, 32, dest2);
+
+	dest2[2] = 0;
+	VectorNormalize(dest2);
+	VectorScale(dest2, 32, dest2);
+	
+	VectorAdd(dest2, source, dest2);
+	traceline(PASSVEC3(source), PASSVEC3(dest2), false, self);
+	if (g_globalvars.trace_fraction == 1.0)
+		return;	
+
+	// If we hit a wall, it's a grab.  Is this a sufficient check?
+	if ( PROG_TO_EDICT(g_globalvars.trace_ent)->s.v.takedamage)
+		return;
+	
+	Grab();
+//	G_centerprint(self, "Grabbed Ledge!\n");
+
+
+}
+
+void CheckCancelGrab()
+{
+	vec3_t source, dest, dest2;
+	
+	// Trace a line from the player's crosshair forward 32 units.  If we hit something, force drop
+	trap_makevectors(self->s.v.v_angle);
+	VectorCopy(self->s.v.origin, source);
+	source[2] += 48;
+	VectorScale(g_globalvars.v_forward, 32, dest);
+	dest[2] = 0;
+	VectorNormalize(dest);
+	VectorScale(dest, 32, dest);
+	VectorAdd(dest, source, dest);
+	traceline(PASSVEC3(source), PASSVEC3(dest), false, self);
+	if (g_globalvars.trace_fraction != 1.0)
+	{
+		self->grab_time = g_globalvars.time;
+		self->is_grabbing = false;
+		return;
+	}
+	// Next, check if the lower trace is still hitting something.  If not, force drop.
+	trap_makevectors(self->s.v.v_angle);
+	VectorCopy(self->s.v.origin, source);
+	source[2] += 16;
+	VectorScale(g_globalvars.v_forward, 32, dest2);
+	dest2[2] = 0;
+	VectorNormalize(dest2);
+	VectorScale(dest2, 32, dest2);
+	VectorAdd(dest2, source, dest2);
+	traceline(PASSVEC3(source), PASSVEC3(dest2), false, self);
+	if (g_globalvars.trace_fraction == 1.0)
+	{
+		self->grab_time = g_globalvars.time;
+		self->is_grabbing = false;
+		return;	
+	}
+}
+
+void SmashPre()
+{
+	if (((int)(self->s.v.flags)) & FL_ONGROUND)
+	{
+		self->has_double_jump = true;
+	}
+	
+	if (self->grab_time < g_globalvars.time && !(self->is_grabbing) && self->s.v.velocity[2] <= 0 && self->wants_to_grab)
+		CheckLedgeGrab();
+
+	if (self->is_grabbing)
+	{
+		self->s.v.velocity[0] = 0;
+		self->s.v.velocity[1] = 0;
+		self->s.v.velocity[2] = 0;
+		if (!self->wants_to_grab) // manual detach check
+		{
+			self->grab_time = g_globalvars.time;
+			self->is_grabbing = false;
+			return;
+		}
+		CheckCancelGrab();
+	}
+
+}
+
 ////////////////
 // GlobalParams:
 // time
@@ -3620,6 +3788,11 @@ void PlayerPreThink()
 		return;					// the think tics
 	}
 
+	if (cvar("k_smashmode"))
+	{
+		SmashPre();
+	}
+	
 	if (isRA())
 	{
 		RocketArenaPre();
@@ -4805,6 +4978,71 @@ float Instagib_Obituary(gedict_t *targ, gedict_t *attacker)
 	return playerheight;
 }
 
+void SmashObituary(gedict_t *targ, gedict_t *attacker)
+{
+	char *deathstring, *deathstring2, *deathstring3;
+	char *attackername, *victimname;
+	
+	attackername = targ->last_attacker->netname;
+	victimname = targ->netname;
+	
+	// We got here because we're in smash mode and dtTRIGGER_HURT == targ->deathtype
+	if (streq(targ->last_attacker->classname, "player") && targ->last_attacker != targ)
+	{ // 
+		if (targ->last_deathtype == dtRL)
+		{
+			deathstring = " was blasted off by ";
+			deathstring2 = "'s rocket at ";
+		}
+		else if (targ->last_deathtype == dtGL)
+		{
+			deathstring = " ate ";
+			deathstring2 = "'s pineapple at ";
+		}
+		else if (targ->last_deathtype == dtAXE)
+		{
+			deathstring = " was launched off by ";
+			deathstring2 = "'s axe at ";
+		}
+		else if (targ->last_deathtype == dtSG)
+		{
+			deathstring = " was poked off by ";
+			deathstring2 = "'s shotgun at ";
+		}
+		else if (targ->last_deathtype == dtSSG)
+		{
+			deathstring = " was launched off by ";
+			deathstring2 = "'s ssg at ";
+		}
+		else if (targ->last_deathtype == dtLG_BEAM)
+		{
+			deathstring = " was shoved off by ";
+			deathstring2 = "'s beam at ";
+		}
+		else
+		{
+			deathstring = " was knocked off by ";
+			deathstring2 = " at ";
+		}
+		deathstring3 = "\%";
+
+		targ->last_attacker->s.v.frags += 1;
+		G_bprint(PRINT_MEDIUM, "%s%s%s%s%3.1f%s\n", victimname, deathstring, attackername, deathstring2, targ->s.v.armorvalue, deathstring3);
+//		G_bprint(PRINT_MEDIUM, "%s%s%3.1f%s%s\n", victimname, deathstring, targ->s.v.armorvalue, deathstring2, attackername);
+		
+		return;
+	}
+	else
+	{ // self death
+		deathstring = " jumped off at ";
+		deathstring2 = "\%";
+		G_bprint(PRINT_MEDIUM, "%s%s%3.1f%s\n", victimname, deathstring, targ->s.v.armorvalue, deathstring2);
+		targ->s.v.frags -= 1;
+	}
+		
+	return;
+}
+
 /*
  ===========
  ClientObituary
@@ -5366,6 +5604,12 @@ void ClientObituary(gedict_t *targ, gedict_t *attacker)
 	}
 	else // attacker->ct != ctPlayer
 	{
+		if (cvar("k_smashmode") && dtTRIGGER_HURT == targ->deathtype)
+		{
+			SmashObituary(targ, attacker);
+			return;
+		}
+
 		if (!isHoonyModeDuel())
 		{
 			targ->s.v.frags -= 1; // killed self

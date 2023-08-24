@@ -35,6 +35,9 @@ void ClanArenaTrackingToggleButton(void);
 void BotsRocketSpawned(gedict_t *newmis);
 void BotsGrenadeSpawned(gedict_t *newmis);
 
+// Smash inpulse
+void GrabLedge(float on);
+
 void AmmoUsed(gedict_t *player)
 {
 #ifdef BOT_SUPPORT
@@ -126,6 +129,11 @@ void W_FireAxe()
 		else if (deathmatch == 3)
 		{
 			damage = k_yawnmode ? 50 : 20; // Yawnmode: 50 axe dmg in dmm3
+		}
+		if (cvar("k_smashmode"))
+		{
+			damage = 250;
+			sound(self, CHAN_VOICE, "player/bathit.wav", 1, ATTN_NORM);
 		}
 
 		PROG_TO_EDICT(g_globalvars.trace_ent)->axhitme = 1;
@@ -2777,6 +2785,15 @@ void ImpulseCommands()
 	else if (impulse == 164)
 	{
 		krjump();
+	}
+
+	else if (impulse == 50)
+	{
+		GrabLedge(1); // -grab
+	}
+	else if (impulse == 51)
+	{
+		GrabLedge(2); // +grab
 	}
 
 	if (clear)

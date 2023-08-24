@@ -135,6 +135,8 @@ void VotePickup();
 void UserMode(float umode);
 void Wp_Reset();
 void Wp_Stats(float on);
+void ToggleAutoGrabLedge();
+void GrabLedge(float on);
 void Sc_Stats(float on);
 void t_jump(float j_type);
 void klist();
@@ -428,6 +430,10 @@ const char CD_NODESC[] = "no desc";
 #define CD_RPICKUP			"vote random team pickup"
 #define CD_1ON1				"duel settings"
 #define CD_1ON1HM			"HoonyMode settings"
+#define CD_FFASM			"SmashMode ffa settings"
+#define CD_1ON1SM			"SmashMode 1on1 settings"
+#define CD_2ON2SM			"SmashMode 2on2 settings"
+#define CD_WIPEOUTSM		"SmashMode Wipeout settings"
 #define CD_2ON2BLITZ		"Blitz 2v2"
 #define CD_4ON4BLITZ		"Blitz 4v4"
 #define CD_2ON2ON2			"2 on 2 on 2 settings"
@@ -445,6 +451,9 @@ const char CD_NODESC[] = "no desc";
 #define CD_WP_RESET			"clear weapon stats"
 #define CD_PLS_WP_STATS		"start print weapon stats"
 #define CD_MNS_WP_STATS		(CD_NODESC) // obvious
+#define CD_AUTO_GRAB		"toggle automatic ledge grabs"
+#define CD_PLS_GRAB			"start trying to grab a ledge"
+#define CD_MNS_GRAB			(CD_NODESC) // obvious
 #define CD_TKFJUMP			"toggle allow kfjump"
 #define CD_TKRJUMP			"toggle allow krjump"
 #define CD_KLIST			"mod's list of users"
@@ -802,11 +811,19 @@ cmd_t cmds[] =
 	{ "XonX", 						DEF(UserMode), 					14, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_XONX },
 	{ "wipeout", 					DEF(UserMode), 					15, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_WIPEOUT },
 	{ "carena", 					DEF(UserMode), 					16, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_CARENA },
+	{ "smashmodeffa", 				DEF(UserMode), 					17, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_FFASM },
+	{ "smashmode1on1", 				DEF(UserMode), 					18, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_1ON1SM },
+	{ "smashmode2on2", 				DEF(UserMode), 					19, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_2ON2SM },
+	{ "smashmodewipeout", 			DEF(UserMode), 					20, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_WIPEOUTSM },
 
 	{ "practice", 					TogglePractice, 				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_PRACTICE },
 	{ "wp_reset", 					Wp_Reset, 						0, 			CF_PLAYER, 																CD_WP_RESET },
 	{ "+wp_stats", 					DEF(Wp_Stats), 					2, 			CF_BOTH | CF_MATCHLESS, 												CD_PLS_WP_STATS },
 	{ "-wp_stats", 					DEF(Wp_Stats), 					1, 			CF_BOTH | CF_MATCHLESS, 												CD_MNS_WP_STATS },
+	{ "toggleautograb", 			DEF(ToggleAutoGrabLedge), 		0, 			CF_PLAYER, 																CD_AUTO_GRAB },
+// 	Moved +grab and -grab to impulse 51 and impulse 50.
+//	{ "+grab", 						DEF(GrabLedge), 				2, 			CF_PLAYER, 																CD_PLS_GRAB },
+//	{ "-grab", 						DEF(GrabLedge), 				1, 			CF_PLAYER, 																CD_MNS_GRAB },
 	{ "tkfjump", 					DEF(t_jump), 					1, 			CF_BOTH_ADMIN, 															CD_TKFJUMP },
 	{ "tkrjump", 					DEF(t_jump), 					2, 			CF_BOTH_ADMIN, 															CD_TKRJUMP },
 	{ "klist", 						klist, 							0, 			CF_BOTH | CF_MATCHLESS, 												CD_KLIST },
@@ -1252,6 +1269,8 @@ void StuffAliases(gedict_t *p)
 		stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO, "alias notready break\n");
 		stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO, "alias kfjump \"impulse 156;+jump;wait;-jump\"\n");
 		stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO, "alias krjump \"impulse 164;+jump;wait;-jump\"\n");
+		stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO, "alias +grab \"impulse 51\"\n");
+		stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO, "alias -grab \"impulse 50\"\n");
 	}
 }
 
@@ -4081,6 +4100,7 @@ const char common_um_init[] =
 	"k_rocketarena 0\n"				// disable Rocket Arena by default
 	"k_race 0\n"					// disable Race by default
 	"k_hoonymode 0\n"				// disable HoonyMode by default
+	"k_smashmode 0\n"				// disable SmashMode by default
 	"k_freshteams 0\n"				// disable FreshTeams by default
 	"k_nosweep 0\n"					// disable nosweep by default
 	"k_spec_info 1\n"				// allow spectators receive took info during game
@@ -4127,6 +4147,95 @@ const char _1on1_um_init[] =
 	"k_lockmin 0\n"					// no efect in duel
 	"k_lockmax 0\n"					// no efect in duel
 	"k_mode 1\n"
+;
+
+const char _ffasm_um_init[] =      // SmashMode rules
+	"coop 0\n"						// no coop
+	"maxclients 8\n"				// 
+	"k_maxclients 8\n"				// 
+	"fraglimit 10\n"				// 
+	"timelimit 0\n"					// 
+	"k_smashmode 1\n"				//
+	"teamplay 0\n"					// 
+	"deathmatch 4\n"				// weapons stay
+	"k_overtime 0\n"				// 
+	"k_disallow_weapons 0\n"		// don't disable GL
+	"k_exttime 3\n"					// 
+	"k_pow 0\n"						// powerups
+	"k_membercount 0\n"				// no efect in duel
+	"k_lockmin 0\n"					// no efect in duel
+	"k_lockmax 0\n"					// no efect in duel
+	"k_mode 3\n"
+	"sv_antilag 1\n"				// antilag on
+	"k_spectalk 1\n"				// enable spec talk by default
+;
+
+const char _1on1sm_um_init[] =      // SmashMode rules
+	"coop 0\n"						// no coop
+	"maxclients 2\n"				// duel = two players
+	"k_maxclients 2\n"				// duel = two players
+	"fraglimit 10\n"				// 
+	"timelimit 0\n"					// 
+	"k_smashmode 1\n"				//
+	"teamplay 1\n"					// 
+	"deathmatch 4\n"				// weapons stay
+	"k_overtime 2\n"				// 
+	"k_disallow_weapons 0\n"		// don't disable GL
+	"k_exttime 3\n"					// 
+	"k_pow 0\n"						// powerups
+	"k_membercount 0\n"				// no efect in duel
+	"k_lockmin 0\n"					// no efect in duel
+	"k_lockmax 0\n"					// no efect in duel
+	"k_mode 1\n"
+	"sv_antilag 1\n"				// antilag on
+	"k_spectalk 1\n"				// enable spec talk by default
+;
+
+const char _2on2sm_um_init[] =
+	"coop 0\n"						// no coop
+	"maxclients 4\n"				// 
+	"k_maxclients 4\n"				// 
+	"fraglimit 0\n"					// 
+	"timelimit 5\n"					// 
+	"k_smashmode 1\n"				//
+	"teamplay 1\n"					// 
+	"deathmatch 4\n"				// weapons stay
+	"k_disallow_weapons 0\n"		// don't disable GL
+	"k_overtime 2\n"				// 
+	"k_exttime 3\n"					// 
+	"k_pow 1\n"						// powerups
+	"k_membercount 1\n"				// minimum number of players in each team
+	"k_lockmin 1\n"					// minimum number of teams
+	"k_lockmax 2\n"					// maximum number of teams
+	"k_mode 2\n"
+	"sv_antilag 1\n"				// antilag on	
+	"k_spectalk 1\n"				// enable spec talk by default
+;
+
+const char _smwipeout_um_init[] =
+	"k_clan_arena 2\n"				// enable wipeout
+	"k_clan_arena_rounds 9\n"		// number of rounds in a series
+	"k_clan_arena_max_respawns 4\n"	// number of respawns per round
+	"coop 0\n"						// no coop
+	"dp 0\n"						// don't drop packs
+	"maxclients 8\n"				// 
+	"k_maxclients 8\n"				// 
+	"fraglimit 0\n"					// 
+	"timelimit 0\n"					// 
+	"k_smashmode 1\n"				//
+	"teamplay 4\n"					// 
+	"deathmatch 4\n"				// weapons stay
+	"k_disallow_weapons 0\n"		// don't disable GL
+	"k_overtime 0\n"				// 
+	"k_exttime 0\n"					// 
+	"k_spw 1\n"						// KT Safety spawns (important for CA)
+	"k_pow 0\n"						// powerups
+	"k_membercount 1\n"				// minimum number of players in each team
+	"k_lockmin 1\n"					// minimum number of teams
+	"k_lockmax 2\n"					// maximum number of teams
+	"k_mode 2\n"
+	"sv_antilag 1\n"				// antilag on
+	"k_spectalk 1\n"				// enable spec talk by default
 ;
 
 const char _1on1hm_um_init[] =
@@ -4426,6 +4535,10 @@ usermode um_list[] =
 	{ "XonX", 		"X on X", 				_XonX_um_init, 		UM_XONX,	 0 },
 	{ "wipeout", 	"Wipeout", 				wipeout_um_init, 	UM_4ON4,	 0 },
 	{ "ca", 		"Clan Arena", 			carena_um_init, 	UM_4ON4,	 0 },
+	{ "smashffa",	"SmashModeffa", 		_ffasm_um_init, 	UM_FFA, 	 0 },
+	{ "smash1on1",	"SmashMode1on1", 		_1on1sm_um_init, 	UM_1ON1, 	 0 },
+	{ "smash2on2",	"SmashMode2on2",		_2on2sm_um_init, 	UM_2ON2, 	 0 },
+	{ "smashwipeout", 	"SmashModeWipeout",	_smwipeout_um_init, UM_4ON4, 	 0 },	
 };
 
 int um_cnt = sizeof(um_list) / sizeof(um_list[0]);
@@ -4867,6 +4980,30 @@ void Wp_Stats(float on)
 	self->wp_stats = (int)on;
 	self->wp_stats_time = g_globalvars.time; // force show/hide
 }
+
+void ToggleAutoGrabLedge()
+{
+	if (iKey(self, "disableautograb"))
+	{
+		self->wants_to_grab = true;
+		G_sprint(self, PRINT_MEDIUM, "Auto Grab Ledge enabled\n");
+		stuffcmd_flags(self, STUFFCMD_IGNOREINDEMO, "setinfo disableautograb \"\"\n");
+	}
+	else
+	{
+		self->wants_to_grab = false;
+		G_sprint(self, PRINT_MEDIUM, "Auto Grab Ledge disabled\n");
+		stuffcmd_flags(self, STUFFCMD_IGNOREINDEMO, "setinfo disableautograb 1\n");
+	}
+}
+
+
+void GrabLedge(float on)
+{
+    on--;
+    self->wants_to_grab = (iKey(self, "disableautograb") == on);
+}
+
 
 void Sc_Stats(float on)
 {

@@ -300,6 +300,11 @@ void SP_worldspawn()
 	trap_precache_sound("items/damage2.wav");
 	trap_precache_sound("items/damage3.wav");
 
+// smash sounds
+	trap_precache_sound("player/bathit.wav");
+	trap_precache_sound("player/plyrdjmp.wav");
+
+
 // ctf
 #ifdef CTF_RELOADMAP
 	if (isCTF()) // precache only if CTF is really on
@@ -876,6 +881,11 @@ void FirstFrame()
 	RegisterCvarEx("k_hoonymode_prevmap", "");
 	RegisterCvarEx("k_hoonymode_prevspawns", "");
 // }
+
+// { smashmode
+	RegisterCvarEx("k_smashmode", "0");
+// }
+
 // { freshteams dmm1
 	RegisterCvarEx("k_freshteams", "0");
 	RegisterCvarEx("k_freshteams_weapon_time", "20");

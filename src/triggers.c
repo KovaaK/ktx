@@ -964,7 +964,11 @@ void hurt_touch()
 	other->deathtype = dtTRIGGER_HURT;
 	T_Damage(other, self, self, self->dmg);
 	self->think = (func_t) hurt_on;
-	self->s.v.nextthink = g_globalvars.time + 1;
+	if (cvar("k_smashmode"))
+		self->s.v.nextthink = g_globalvars.time + 0.1;
+	else
+		self->s.v.nextthink = g_globalvars.time + 1;
+
 }
 
 /*QUAKED trigger_hurt (.5 .5 .5) ?

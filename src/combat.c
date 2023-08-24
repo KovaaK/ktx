@@ -442,6 +442,7 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	float dmg_dealt = 0, virtual_take = 0, unbound_dmg_dealt = 0;
 	float non_hdp_damage; // save damage before handicap apply for kickback calculation
 	float native_damage = damage; // save damage before apply any modificator
+	float smashKBmult = 1;
 	char *attackerteam, *targteam, *attackername, *victimname;
 	qbool tp4teamdmg = false;
 
@@ -464,6 +465,15 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 		}
 	}
 
+	if (cvar("k_smashmode"))
+	{
+		if (dtWATER_DMG == targ->deathtype || dtFALL == targ->deathtype) // No drowning or fall damage
+		{
+			return;
+		}
+		
+	}
+	
 	if (isCA())
 	{
 		if (dtWATER_DMG == targ->deathtype		// No drowning in CA
@@ -537,7 +547,7 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 
 	// in teamplay 4 we do no armor or health damage to teammates (unless telefrag), but do apply velocity changes
 	if (tp_num()
-			== 4&& streq(targteam, attackerteam) && ( isCA() || targ != attacker ) && !TELEDEATH(targ))
+			== 4&& streq(targteam, attackerteam) && ( isCA() || cvar("k_smashmode") || targ != attacker ) && !TELEDEATH(targ))
 	{
 		tp4teamdmg = true;
 	}
@@ -604,7 +614,7 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 
 	save = newceil(targ->s.v.armortype * damage);
 
-	if (tp4teamdmg)
+	if (tp4teamdmg || cvar("k_smashmode"))
 	{
 		save = 0; // we do not touch armor
 	}
@@ -760,6 +770,14 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 			dmg_dealt += bound(0, virtual_take, targ->s.v.health);
 		}
 	}
+	else if (cvar("k_smashmode"))
+	{
+ 		if (!(dtTRIGGER_HURT == targ->deathtype || dtTELE1 == targ->deathtype || dtTELE2 == targ->deathtype || dtTELE3 == targ->deathtype))
+		{
+			take = 0; // smashmode blocks health damage unless it's a telefrag or hurt trigger.
+			dmg_dealt += native_damage;
+		}
+	}
 	else
 	{
 		// damage dealt capped by victim's health
@@ -843,6 +861,24 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 					dmg_is_splash, (int)save);
 	}
 
+	// Core Smashmode mechanics
+	if (cvar("k_smashmode") && (attacker != targ && (!streq(targteam, attackerteam) || tp_num() == 0)))
+	{
+		if (targ->invincible_finished <= g_globalvars.time && (!streq(attacker->classname, "trigger_hurt")))
+		{
+			targ->s.v.armorvalue += native_damage * 0.25; //add to armor per original damage done
+			targ->last_deathtype = targ->deathtype;
+			targ->last_attacker = attacker;
+		}
+		
+		//If target was grabbing the ledge, knock him off and block grab timer for 1s
+		if (targ->is_grabbing)
+		{
+			targ->is_grabbing = false;
+			targ->grab_time = g_globalvars.time + 1;
+		}
+	}
+	
 	// figure momentum add
 	if ((inflictor != world)
 			&& ((targ->s.v.movetype == MOVETYPE_WALK)
@@ -879,9 +915,21 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 			nailkick = 1.0;
 		}
 
+		if (cvar("k_smashmode") && match_in_progress == 2 && targ != attacker)
+		{ // smashKBmult is initialized at 1, so assume it's still 1 if these conditions are not met.
+			if (targ->invincible_finished >= g_globalvars.time)
+				smashKBmult = 0;
+			else if (dtLG_BEAM == targ->deathtype && ((int)targ->s.v.flags & FL_ONGROUND)) // target on ground vs LG
+				smashKBmult = min(1.5, 0.5 + 0.0025 * targ->s.v.armorvalue); // .5 knockback at 0 armor, 1 knockback at 200 armor, caps at 1.5 knockback for 400 armor.
+			else if (dtLG_BEAM == targ->deathtype)
+				smashKBmult = min(0.85, 0.5 + 0.0025 * targ->s.v.armorvalue); // same linear scaling, but caps at 0.85 knockback (140 armor).
+			else if (targ->s.v.armorvalue > 100)
+				smashKBmult = targ->s.v.armorvalue*0.01;
+		}
+ 
 		for (i = 0; i < 3; i++)
 		{
-			targ->s.v.velocity[i] += dir[i] * non_hdp_damage * c1 * nailkick
+			targ->s.v.velocity[i] += dir[i] * non_hdp_damage * c1 * nailkick * smashKBmult
 					* (midair && playerheight >= 45 ? (1 + (playerheight - 45) / 64) : 1);
 		}
 

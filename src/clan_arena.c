@@ -582,7 +582,7 @@ qbool CA_can_fire(gedict_t *p)
 		return true;
 	}
 
-	if (!ra_match_fight && p->ready)
+	if (!ra_match_fight && (p->ready || cvar("k_smashmode")))
 	{
 		return true;	// allow fire during prewar if /ready
 	}

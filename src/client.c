@@ -2136,16 +2136,7 @@ void PutClientInServer(void)
 			self->s.v.ammo_shells = 255;
 			self->s.v.ammo_rockets = 255;
 			self->s.v.ammo_cells = 255;
-
-			if (cvar("k_smashmode"))
-			{
-				dmm4_invinc_time = -1; // means off
-				self->s.v.armorvalue = 0;
-				self->last_attacker = self;
-			}
-			else
-				self->s.v.armorvalue = 200;
-			
+			self->s.v.armorvalue = 200;		
 			self->s.v.armortype = 0.8;
 			self->s.v.health = 250;
 
@@ -2249,7 +2240,13 @@ void PutClientInServer(void)
 	{
 		CA_PutClientInServer();
 	}
-
+	
+	if (cvar("k_smashmode"))
+	{
+		self->invincible_finished = -1;
+		self->s.v.armorvalue = 0;
+		self->last_attacker = self;
+	}
 	self->wants_to_grab = !iKey(self, "disableautograb"); // reset state of grab according to player pref
 
 	// remove particular weapons in dmm4

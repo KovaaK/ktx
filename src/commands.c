@@ -4224,7 +4224,7 @@ const char _smwipeout_um_init[] =
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
 	"teamplay 4\n"					// 
-	"deathmatch 4\n"				// weapons stay
+	"deathmatch 5\n"				// 
 	"k_disallow_weapons 0\n"		// don't disable GL
 	"k_overtime 0\n"				// 
 	"k_exttime 0\n"					// 

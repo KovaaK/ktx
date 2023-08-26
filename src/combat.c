@@ -870,6 +870,7 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 			if (!streq(targteam, attackerteam) || tp_num() == 0)
 			{
 				targ->s.v.armorvalue += native_damage * 0.25; //add to armor per original damage done
+				targ->s.v.health = max(1, 250 - 0.6225 * targ->s.v.armorvalue); // make health decrease as armor goes up (bottoming out at 1)
 				targ->last_deathtype = targ->deathtype;
 			}
 			targ->last_attacker = attacker;

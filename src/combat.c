@@ -487,7 +487,8 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 			if (!(dtTELE1 == targ->deathtype	// always do tele damage
 				|| dtTELE2 == targ->deathtype	// always do tele damage
 				|| dtTELE3 == targ->deathtype	// always do tele damage
-				|| dtSUICIDE == targ->deathtype)) // do suicide damage anyway
+				|| dtSUICIDE == targ->deathtype // do suicide damage anyway
+				|| (dtTRIGGER_HURT && cvar("k_smashmode")))) // and if we're in smash mode, do trigger_hurt damage too
 			{
 				return;
 			}

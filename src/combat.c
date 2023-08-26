@@ -863,12 +863,15 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	}
 
 	// Core Smashmode mechanics
-	if (cvar("k_smashmode") && (attacker != targ && (!streq(targteam, attackerteam) || tp_num() == 0)))
+	if (cvar("k_smashmode") && attacker != targ)
 	{
 		if (targ->invincible_finished <= g_globalvars.time && (!streq(attacker->classname, "trigger_hurt")))
 		{
-			targ->s.v.armorvalue += native_damage * 0.25; //add to armor per original damage done
-			targ->last_deathtype = targ->deathtype;
+			if (!streq(targteam, attackerteam) || tp_num() == 0)
+			{
+				targ->s.v.armorvalue += native_damage * 0.25; //add to armor per original damage done
+				targ->last_deathtype = targ->deathtype;
+			}
 			targ->last_attacker = attacker;
 		}
 		

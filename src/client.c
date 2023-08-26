@@ -4977,13 +4977,45 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 {
 	char *deathstring, *deathstring2, *deathstring3;
 	char *attackername, *victimname;
+	gedict_t *last_attacker;
 	
-	attackername = targ->last_attacker->netname;
+	last_attacker = targ->last_attacker;	
+	attackername = last_attacker->netname;
 	victimname = targ->netname;
 	
 	// We got here because we're in smash mode and dtTRIGGER_HURT == targ->deathtype
-	if (streq(targ->last_attacker->classname, "player") && targ->last_attacker != targ)
-	{ // 
+	if (streq(last_attacker->classname, "player") && last_attacker != targ)
+	{ //
+
+		if ((isTeam() || isCTF()) && streq(getteam(targ), getteam(last_attacker)) && !strnull(getteam(last_attacker)) && (targ != last_attacker))
+		{
+			last_attacker->friendly += 1; // bump teamkills counter
+			last_attacker->s.v.frags -= 1; // and take away a frag
+			
+			switch ((int)(g_random() * 4))
+			{
+			case 0:
+				deathstring = va(" checks %s glasses", g_his(attacker));
+				break;
+
+			case 1:
+				deathstring = " loses another friend";
+				break;
+
+			case 2:
+				deathstring = " gets a frag for the other team";
+				break;
+
+			default:
+				deathstring = " mows down a teammate";
+				break;
+			}
+			deathstring3 = "\%";
+			
+			G_bprint(PRINT_MEDIUM, "%s%s (%3.1f%s)\n", attackername, deathstring, targ->s.v.armorvalue, deathstring3);
+			return;
+		}
+		
 		if (targ->last_deathtype == dtRL)
 		{
 			deathstring = " was blasted off by ";
@@ -5021,9 +5053,8 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 		}
 		deathstring3 = "\%";
 
-		targ->last_attacker->s.v.frags += 1;
+		last_attacker->s.v.frags += 1;
 		G_bprint(PRINT_MEDIUM, "%s%s%s%s%3.1f%s\n", victimname, deathstring, attackername, deathstring2, targ->s.v.armorvalue, deathstring3);
-//		G_bprint(PRINT_MEDIUM, "%s%s%3.1f%s%s\n", victimname, deathstring, targ->s.v.armorvalue, deathstring2, attackername);
 		
 		return;
 	}

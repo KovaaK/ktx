@@ -1459,6 +1459,12 @@ void CA_Frame(void)
 				if (p->ca_ready)
 				{
 					p->time_of_respawn = g_globalvars.time; // resets alive_time to 0
+					p->invincible_time = 0;
+					p->invincible_finished = 0;
+					p->super_time = 0;
+					p->super_damage_finished = 0;
+					p->s.v.items = (int)p->s.v.items & ~( IT_KEY1 |
+		IT_KEY2 | IT_INVISIBILITY | IT_INVULNERABILITY | IT_SUIT | IT_QUAD | IT_SUPERHEALTH);
 				}
 			}
 			

@@ -301,8 +301,8 @@ void SP_worldspawn()
 	trap_precache_sound("items/damage3.wav");
 
 // smash sounds
-	trap_precache_sound("player/bathit.wav");
-	trap_precache_sound("player/plyrdjmp.wav");
+	trap_precache_sound("player/batbop.wav");
+	trap_precache_sound("player/djmp.wav");
 
 
 // ctf

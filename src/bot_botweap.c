@@ -726,6 +726,9 @@ static int DesiredWeapon(void)
 	qbool firing_lg = self->fb.firing && self->s.v.weapon == IT_LIGHTNING && self->s.v.ammo_cells
 			&& g_globalvars.time < self->attack_finished;
 
+	if (cvar("k_smashmode"))
+		has_lg = false; // not fun dealing with frogbot shafts when there are no walls to LOS them
+
 	if (TP_CouldDamageTeammate(self))
 	{
 		return IT_SHOTGUN;

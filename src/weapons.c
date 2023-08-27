@@ -133,7 +133,7 @@ void W_FireAxe()
 		if (cvar("k_smashmode"))
 		{
 			damage = 250;
-			sound(self, CHAN_VOICE, "player/batbop.wav", 1, ATTN_NORM);
+			sound(self, CHAN_VOICE, "player/batbop02.wav", 1, ATTN_NORM);
 		}
 
 		PROG_TO_EDICT(g_globalvars.trace_ent)->axhitme = 1;

@@ -2478,7 +2478,7 @@ void SmashDoubleJump()
 
 		self->has_double_jump = false;
 		self->s.v.velocity[2] = 270;
-		sound(self, CHAN_BODY, "player/djmp.wav", 1, ATTN_NORM);
+		sound(self, CHAN_BODY, "player/djmp02.wav", 1, ATTN_NORM);
 	}
 }
 

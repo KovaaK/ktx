@@ -2243,7 +2243,12 @@ void PutClientInServer(void)
 	
 	if (cvar("k_smashmode"))
 	{
-		self->invincible_finished = -1;
+		self->invincible_time = 0;
+		self->invincible_finished = 0;
+		self->super_time = 0;
+		self->super_damage_finished = 0;
+		self->s.v.items = (int)self->s.v.items & ~( IT_KEY1 |
+			IT_KEY2 | IT_INVISIBILITY | IT_INVULNERABILITY | IT_SUIT | IT_QUAD | IT_SUPERHEALTH);
 		self->s.v.armorvalue = 0;
 		self->last_attacker = self;
 	}

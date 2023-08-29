@@ -4168,6 +4168,7 @@ const char _ffasm_um_init[] =      // SmashMode rules
 	"k_mode 3\n"
 	"sv_antilag 1\n"				// antilag on
 	"k_spectalk 1\n"				// enable spec talk by default
+	"dp 0\n"						// drop pack
 ;
 
 const char _1on1sm_um_init[] =      // SmashMode rules
@@ -4189,6 +4190,7 @@ const char _1on1sm_um_init[] =      // SmashMode rules
 	"k_mode 1\n"
 	"sv_antilag 1\n"				// antilag on
 	"k_spectalk 1\n"				// enable spec talk by default
+	"dp 0\n"						// drop pack
 ;
 
 const char _2on2sm_um_init[] =
@@ -4210,6 +4212,7 @@ const char _2on2sm_um_init[] =
 	"k_mode 2\n"
 	"sv_antilag 1\n"				// antilag on	
 	"k_spectalk 1\n"				// enable spec talk by default
+	"dp 0\n"						// drop pack
 ;
 
 const char _smwipeout_um_init[] =

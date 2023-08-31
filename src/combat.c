@@ -871,7 +871,8 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 			{
 				hdp = GetHandicap(targ);
 				targ->s.v.armorvalue += native_damage * 0.25 / ((float)hdp / 100); //add to armor per original damage done
-				attacker->s.v.health = targ->s.v.armorvalue; // set attacker's health to the target's armorvalue
+				if (attacker->s.v.health > 0)
+					attacker->s.v.health = targ->s.v.armorvalue; // set attacker's health to the target's armorvalue
 				targ->last_deathtype = targ->deathtype;
 			}
 			targ->last_attacker = attacker;

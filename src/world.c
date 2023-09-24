@@ -303,7 +303,7 @@ void SP_worldspawn()
 // smash sounds
 	trap_precache_sound("player/batbop02.wav");
 	trap_precache_sound("player/djmp02.wav");
-
+	trap_precache_sound("player/KillConfirmed01.wav");
 
 // ctf
 #ifdef CTF_RELOADMAP

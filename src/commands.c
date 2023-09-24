@@ -220,6 +220,7 @@ void ToggleNewCoopNm();
 void ToggleVwep();
 void TogglePause();
 void ToggleArena();
+void ToggleSmashArena();
 
 void Spawn666Time();
 
@@ -576,6 +577,7 @@ const char CD_NODESC[] = "no desc";
 #define CD_RA_BREAK			"toggle RA line status"
 #define CD_RA_POS			"RA line position"
 #define CD_ARENA			"toggle rocket arena"
+#define CD_SMARENA			"toggle smash rocket arena"
 // }
 // { Clan Arena
 #define CD_CARENA			"toggle clan arena"
@@ -959,6 +961,7 @@ cmd_t cmds[] =
 	{ "ra_break", 					ra_break, 						0, 			CF_PLAYER, 																CD_RA_BREAK },
 	{ "ra_pos", 					ra_PrintPos, 					0, 			CF_PLAYER, 																CD_RA_POS },
 	{ "arena", 						ToggleArena, 					0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_ARENA },
+	{ "smashmodearena", 			ToggleSmashArena,				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_SMARENA },
 	// }
 	{ "force_spec", 				force_spec, 					0, 			CF_BOTH_ADMIN | CF_PARAMS, 												CD_FORCE_SPEC },
 	// { bans
@@ -8581,6 +8584,22 @@ void ToggleArena()
 
 		// avoid spawn bug with safe spawn mode
 		cvar_fset("k_spw", 1);
+	}
+}
+
+void ToggleSmashArena()
+{
+	if (!is_rules_change_allowed())
+	{
+		return;
+	}
+
+	if (!isRA())
+	{
+		// seems we trying turn RA on.
+		ToggleArena();
+		if (!cvar("k_smashmode"))
+			cvar_toggle_msg(self, "k_smashmode", redtext("SmashMode"));
 	}
 }
 

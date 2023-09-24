@@ -4996,6 +4996,7 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 		{
 			last_attacker->friendly += 1; // bump teamkills counter
 			last_attacker->s.v.frags -= 1; // and take away a frag
+			logfrag(last_attacker, last_attacker);
 			
 			switch ((int)(g_random() * 4))
 			{
@@ -5058,7 +5059,10 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 		}
 		deathstring3 = "\%";
 
+		stuffcmd(last_attacker, "play player/KillConfirmed01.wav\n");
 		last_attacker->s.v.frags += 1;
+		logfrag(last_attacker, targ);
+
 		G_bprint(PRINT_MEDIUM, "%s%s%s%s%3.1f%s\n", victimname, deathstring, attackername, deathstring2, targ->s.v.armorvalue, deathstring3);
 		
 		return;
@@ -5069,6 +5073,7 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 		deathstring2 = "\%";
 		G_bprint(PRINT_MEDIUM, "%s%s%3.1f%s\n", victimname, deathstring, targ->s.v.armorvalue, deathstring2);
 		targ->s.v.frags -= 1;
+		logfrag(targ, targ);
 	}
 		
 	return;

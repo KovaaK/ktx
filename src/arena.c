@@ -233,6 +233,7 @@ void ra_ClientObituary(gedict_t *targ, gedict_t *attacker)
 {
 	int ah, aa;
 	gedict_t *loser, *winner;
+	char *deathstring3;
 
 	if (!isRA())
 	{
@@ -281,16 +282,26 @@ void ra_ClientObituary(gedict_t *targ, gedict_t *attacker)
 	ah = attacker->s.v.health;
 	aa = attacker->s.v.armorvalue;
 
+	deathstring3 = "\%";
+
 	if (targ == winner)
 	{
 		winner->ps.loses += 1;
 		loser->ps.wins += 1;
 
-		G_bprint(PRINT_HIGH, "The %s %s has been defeated\n", redtext("winner"), getname(winner));
+		if (cvar("k_smashmode"))
+		{
+			G_bprint(PRINT_HIGH, "The %s %s has been defeated at %3.1f%s\n", redtext("winner"), getname(winner), targ->s.v.armorvalue, deathstring3);
+			G_bprint(PRINT_HIGH, "The %s %s had %3.1f%s\n", redtext("challenger"), getname(winner), loser->s.v.armorvalue, deathstring3);
+			loser->s.v.armorvalue = 0;
+		}
+		else
+			G_bprint(PRINT_HIGH, "The %s %s has been defeated\n", redtext("winner"), getname(winner));
 
 		if (targ == attacker)
 		{
-			G_bprint(PRINT_HIGH, "by %s!\n", g_himself(winner));
+			if (!cvar("k_smashmode"))
+				G_bprint(PRINT_HIGH, "by %s!\n", g_himself(winner));
 			// Self death gives the point to the opponent
 			loser->s.v.frags += 1;
 		}
@@ -303,11 +314,19 @@ void ra_ClientObituary(gedict_t *targ, gedict_t *attacker)
 		loser->ps.loses += 1;
 		winner->ps.wins += 1;
 
-		G_bprint(PRINT_HIGH, "The %s %s has failed\n", redtext("challenger"), getname(loser));
+		if (cvar("k_smashmode"))
+		{
+			G_bprint(PRINT_HIGH, "The %s %s has failed at %3.1f%s\n", redtext("challenger"), getname(loser), targ->s.v.armorvalue, deathstring3);
+			G_bprint(PRINT_HIGH, "The %s %s had %3.1f%s\n", redtext("winner"), getname(winner), winner->s.v.armorvalue, deathstring3);
+			winner->s.v.armorvalue = 0;
+		}
+		else
+			G_bprint(PRINT_HIGH, "The %s %s has failed\n", redtext("challenger"), getname(loser));
 
 		if (targ == attacker)
 		{
-			G_bprint(PRINT_HIGH, "because %s became bored with life!\n", g_he(loser));
+			if (!cvar("k_smashmode"))
+				G_bprint(PRINT_HIGH, "because %s became bored with life!\n", g_he(loser));
 			// Self death gives the point to the opponent
 			winner->s.v.frags += 1;
 		}
@@ -359,6 +378,7 @@ void ra_PutClientInServer()
 	}
 
 	setnowep(self); // basic shit, even for qued player
+	self->wants_to_grab = !iKey(self, "disableautograb"); // reset state of grab according to player pref
 
 	if (isWinner(self) || isLoser(self))
 	{
@@ -425,7 +445,8 @@ void setfullwep(gedict_t *anent)
 						IT_GRENADE_LAUNCHER | IT_ROCKET_LAUNCHER | IT_LIGHTNING;
 	// armor
 	anent->s.v.items = (int)anent->s.v.items | IT_ARMOR3;
-	anent->s.v.armorvalue = 200;
+	if (!cvar("k_smashmode"))
+		anent->s.v.armorvalue = 200;
 	anent->s.v.armortype = 0.8;
 	// health
 	anent->s.v.health = 100;

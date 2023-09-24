@@ -235,7 +235,7 @@ void ra_ClientObituary(gedict_t *targ, gedict_t *attacker)
 	gedict_t *loser, *winner;
 	char *deathstring3;
 
-	if (!isRA())
+	if (!isRA() || ra_match_fight != 2)
 	{
 		return;
 	}

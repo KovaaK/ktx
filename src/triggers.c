@@ -954,6 +954,9 @@ void hurt_items()
 
 void hurt_touch()
 {
+	if (isRA() && ra_match_fight != 2 && cvar("k_smashmode") && streq(other->classname, "player"))
+		other->s.v.takedamage = DAMAGE_AIM;
+
 	if (!other->s.v.takedamage)
 	{
 		hurt_items();

@@ -453,7 +453,6 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	// can't apply damage to dead
 	if (!targ->s.v.takedamage || ISDEAD(targ))
 	{
-		if (!(cvar("k_smashmode") && isRA() && dtTRIGGER_HURT == targ->deathtype))
 			return;
 	}
 

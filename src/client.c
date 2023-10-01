@@ -5059,7 +5059,7 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 		}
 		deathstring3 = "\%";
 
-		stuffcmd(last_attacker, "play player/KillConfirmed01.wav\n");
+		stuffcmd(last_attacker, "play player/killcnf1.wav\n");
 		last_attacker->s.v.frags += 1;
 		logfrag(last_attacker, targ);
 

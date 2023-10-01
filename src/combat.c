@@ -453,7 +453,14 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	// can't apply damage to dead
 	if (!targ->s.v.takedamage || ISDEAD(targ))
 	{
+		if (isRA() && !targ->s.v.takedamage && (dtTELE1 == targ->deathtype || dtTELE2 == targ->deathtype || dtTELE3 == targ->deathtype || dtSUICIDE == targ->deathtype))
+		{
+			targ->s.v.takedamage = true;
+		}
+		else
+		{
 			return;
+		}
 	}
 
 	// can't damage other players in race

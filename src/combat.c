@@ -306,6 +306,9 @@ void Killed(gedict_t *targ, gedict_t *attacker, gedict_t *inflictor)
 	self->s.v.takedamage = DAMAGE_NO;
 	self->touch = (func_t) SUB_Null;
 	self->s.v.effects = 0;
+	self->hasbag = false;
+//	self->ctf_flag -= (self->ctf_flag & CTF_FLAG); // was trying these to trigger a glow effect, but it didn't work.
+//	self->s.v.effects -= ((int)self->s.v.effects & (EF_FLAG1 | EF_FLAG2));
 
 	monster_death_use();
 

@@ -304,6 +304,7 @@ void SP_worldspawn()
 	trap_precache_sound("player/batbop02.wav");
 	trap_precache_sound("player/djmp02.wav");
 	trap_precache_sound("player/killcnf1.wav");
+	trap_precache_sound("items/suit.wav");
 
 // ctf
 #ifdef CTF_RELOADMAP
@@ -882,8 +883,9 @@ void FirstFrame()
 	RegisterCvarEx("k_hoonymode_prevspawns", "");
 // }
 
-// { smashmode
+// { smashmodes
 	RegisterCvarEx("k_smashmode", "0");
+	RegisterCvarEx("k_bagman", "0");
 // }
 
 // { freshteams dmm1

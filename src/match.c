@@ -597,6 +597,126 @@ void CheckOvertime()
 	}
 }
 
+void BagTouch()
+{
+	if (other->ct != ctPlayer)
+	{
+		return;
+	}
+
+	if (ISDEAD(other))
+	{
+		return;
+	}
+
+	if (!k_practice)
+	{
+		if (match_in_progress != 2)
+		{
+			return;
+		}
+	}
+
+	if (other == PROG_TO_EDICT(self->s.v.owner))
+	{
+		return;
+	}
+
+	if (self->think == (func_t)SUB_Remove)
+	{
+		self->s.v.nextthink = g_globalvars.time + 90;
+	}
+
+//	self->ctf_flag = (self->ctf_flag & CTF_FLAG); // was trying these to trigger a glow effect, but it didn't work.
+//	other->s.v.effects = (int)other->s.v.effects | EF_FLAG2;
+//	other->s.v.effects = (int)other->s.v.effects | EF_FLAG1;
+	other->hasbag = true;
+
+	cl_refresh_plus_scores(other); // update players status bar faster.  Not sure if relevant.
+
+	G_bprint(PRINT_MEDIUM, "%s picked up the bag!\n", other->netname);
+	sound(other, CHAN_ITEM, "weapons/lock4.wav", 1, ATTN_NORM);
+	stuffcmd(other, "bf\n");
+	ent_remove(self);
+}
+
+void SpawnBag()
+{
+	gedict_t *spot;
+	gedict_t *item;
+	gedict_t *e;
+	float movetype = MOVETYPE_NONE;
+
+	// Check if there are any bags out there already, and if so don't spawn anything.
+	for (e = world; (e = find(e, FOFCLSN, "bag"));)
+	{
+		return;
+	}
+
+
+	spot = SelectSpawnPoint("info_player_deathmatch");
+
+	item = spawn();
+	setorigin(item, spot->s.v.origin[0], spot->s.v.origin[1], spot->s.v.origin[2] - 24);
+	item->classname = "bag";
+	item->s.v.velocity[0] = i_rnd(-100, 100);
+	item->s.v.velocity[1] = i_rnd(-100, 100);
+	item->s.v.velocity[2] = 400;
+	item->s.v.flags = FL_ITEM;
+	item->s.v.solid = SOLID_TRIGGER;
+	item->s.v.movetype = MOVETYPE_BOUNCE;
+	setmodel(item, "progs/backpack.mdl");
+	setsize(item, -16, -16, 0, 16, 16, 56);
+	item->touch = (func_t) BagTouch;
+	item->s.v.nextthink = g_globalvars.time + 5;
+	item->think = (func_t) SUB_Remove;
+
+	sound(item, CHAN_VOICE, "items/itembk2.wav", 1, ATTN_NORM);	// play respawn sound
+}
+
+void BagmanTimerThink()
+{ // Called every 1s
+	gedict_t *p;
+	int bagmanCount = 0;
+	gedict_t *bagp;
+	
+	for (p = world; (p = find_plr(p));)
+	{
+		if (p->hasbag)
+		{
+			bagmanCount++;
+			bagp = p;
+		}
+	}
+
+	if (bagmanCount > 1) // failsafe
+	{
+		for (p = world; (p = find_plr(p));)
+		{
+			p->hasbag = false;
+		}
+		bagmanCount = 0;
+	}
+
+	if (bagmanCount == 1)
+	{
+		if ((int)self->cnt2 % 5 == 0) // every fifth second.
+		{
+			// Add a frag, add 25% to their stack, play a sound, maybe make a flash?
+			bagp->s.v.frags += 1;
+			bagp->s.v.armorvalue += 25;
+			sound(bagp, CHAN_AUTO, "items/suit.wav", 1, ATTN_NORM);
+		}
+	}
+
+	if (bagmanCount == 0)
+		if ((int)self->cnt2 % 3 == 1) // every third second.  58, 55, 52, 49, ... 7, 4, 1
+		{
+			SpawnBag();
+		}
+
+}
+
 // Called every second during a match. cnt = minutes, cnt2 = seconds left.
 // Tells the time every now and then.
 void TimerThink()
@@ -646,6 +766,9 @@ void TimerThink()
 
 		return;
 	}
+
+	if (cvar("k_bagman")) 
+		BagmanTimerThink();
 
 	if (k_sudden_death)
 	{

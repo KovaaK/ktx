@@ -434,6 +434,8 @@ const char CD_NODESC[] = "no desc";
 #define CD_FFASM			"SmashMode ffa settings"
 #define CD_1ON1SM			"SmashMode 1on1 settings"
 #define CD_2ON2SM			"SmashMode 2on2 settings"
+#define CD_FFASMBM			"SmashMode Bagman ffa settings"
+#define CD_TDMSMBM			"SmashMode Bagman tdm settings"
 #define CD_WIPEOUTSM		"SmashMode Wipeout settings"
 #define CD_2ON2BLITZ		"Blitz 2v2"
 #define CD_4ON4BLITZ		"Blitz 4v4"
@@ -817,6 +819,8 @@ cmd_t cmds[] =
 	{ "smashmode1on1", 				DEF(UserMode), 					18, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_1ON1SM },
 	{ "smashmode2on2", 				DEF(UserMode), 					19, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_2ON2SM },
 	{ "smashmodewipeout", 			DEF(UserMode), 					20, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_WIPEOUTSM },
+	{ "smashmodebm", 				DEF(UserMode), 					21, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_FFASMBM },
+	{ "smashmodetdmbm",				DEF(UserMode), 					22, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_TDMSMBM },
 
 	{ "practice", 					TogglePractice, 				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_PRACTICE },
 	{ "wp_reset", 					Wp_Reset, 						0, 			CF_PLAYER, 																CD_WP_RESET },
@@ -4104,6 +4108,7 @@ const char common_um_init[] =
 	"k_race 0\n"					// disable Race by default
 	"k_hoonymode 0\n"				// disable HoonyMode by default
 	"k_smashmode 0\n"				// disable SmashMode by default
+	"k_bagman 0\n"					// disable SmashMode by default
 	"k_freshteams 0\n"				// disable FreshTeams by default
 	"k_nosweep 0\n"					// disable nosweep by default
 	"k_spec_info 1\n"				// allow spectators receive took info during game
@@ -4159,6 +4164,7 @@ const char _ffasm_um_init[] =      // SmashMode rules
 	"fraglimit 10\n"				// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
+	"k_bagman 0\n"					//
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_overtime 0\n"				// 
@@ -4174,6 +4180,60 @@ const char _ffasm_um_init[] =      // SmashMode rules
 	"dp 0\n"						// drop pack
 ;
 
+const char _ffasmbm_um_init[] =     // SmashMode Bagman FFA rules
+	"coop 0\n"						// no coop
+	"maxclients 8\n"				// 
+	"k_maxclients 8\n"				// 
+	"fraglimit 0\n" 				// 
+	"timelimit 5\n"					// 
+	"k_smashmode 1\n"				//
+	"k_bagman 1\n"					//
+	"k_ctf_runes 1\n"				//
+	"k_ctf_rune_power_res 0\n"		//
+	"k_ctf_rune_power_str 0\n"		// 
+	"k_ctf_rune_power_hst 0\n"		// 
+	"teamplay 0\n"					// 
+	"deathmatch 4\n"				// weapons stay
+	"k_overtime 0\n"				// 
+	"k_disallow_weapons 0\n"		// don't disable GL
+	"k_exttime 3\n"					// 
+	"k_pow 0\n"						// powerups
+	"k_membercount 0\n"				// no efect in duel
+	"k_lockmin 0\n"					// no efect in duel
+	"k_lockmax 0\n"					// no efect in duel
+	"k_mode 3\n"
+	"sv_antilag 1\n"				// antilag on
+	"k_spectalk 1\n"				// enable spec talk by default
+	"dp 0\n"						// drop pack
+;
+
+const char _tdmsmbm_um_init[] =     // SmashMode Bagman TDM rules
+	"coop 0\n"						// no coop
+	"maxclients 8\n"				// 
+	"k_maxclients 8\n"				// 
+	"fraglimit 0\n"					// 
+	"timelimit 5\n"					// 
+	"k_smashmode 1\n"				//
+	"k_bagman 1\n"					//
+	"k_ctf_runes 1\n"				//
+	"k_ctf_rune_power_res 0\n"		//
+	"k_ctf_rune_power_str 0\n"		// 
+	"k_ctf_rune_power_hst 0\n"		// 
+	"teamplay 1\n"					// 
+	"deathmatch 4\n"				// weapons stay
+	"k_disallow_weapons 0\n"		// don't disable GL
+	"k_overtime 2\n"				// 
+	"k_exttime 3\n"					// 
+	"k_pow 1\n"						// powerups
+	"k_membercount 1\n"				// minimum number of players in each team
+	"k_lockmin 1\n"					// minimum number of teams
+	"k_lockmax 2\n"					// maximum number of teams
+	"k_mode 2\n"
+	"sv_antilag 1\n"				// antilag on	
+	"k_spectalk 1\n"				// enable spec talk by default
+	"dp 0\n"						// drop pack
+;
+
 const char _1on1sm_um_init[] =      // SmashMode rules
 	"coop 0\n"						// no coop
 	"maxclients 2\n"				// duel = two players
@@ -4181,6 +4241,7 @@ const char _1on1sm_um_init[] =      // SmashMode rules
 	"fraglimit 10\n"				// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
+	"k_bagman 0\n"					//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_overtime 2\n"				// 
@@ -4203,6 +4264,7 @@ const char _2on2sm_um_init[] =
 	"fraglimit 0\n"					// 
 	"timelimit 5\n"					// 
 	"k_smashmode 1\n"				//
+	"k_bagman 0\n"					//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_disallow_weapons 0\n"		// don't disable GL
@@ -4229,6 +4291,7 @@ const char _smwipeout_um_init[] =
 	"fraglimit 0\n"					// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
+	"k_bagman 0\n"					//
 	"teamplay 4\n"					// 
 	"deathmatch 4\n"				// 
 	"k_disallow_weapons 0\n"		// don't disable GL
@@ -4541,10 +4604,12 @@ usermode um_list[] =
 	{ "XonX", 		"X on X", 				_XonX_um_init, 		UM_XONX,	 0 },
 	{ "wipeout", 	"Wipeout", 				wipeout_um_init, 	UM_4ON4,	 0 },
 	{ "ca", 		"Clan Arena", 			carena_um_init, 	UM_4ON4,	 0 },
-	{ "smashffa",	"SmashModeffa", 		_ffasm_um_init, 	UM_FFA, 	 0 },
-	{ "smash1on1",	"SmashMode1on1", 		_1on1sm_um_init, 	UM_1ON1, 	 0 },
-	{ "smash2on2",	"SmashMode2on2",		_2on2sm_um_init, 	UM_2ON2, 	 0 },
-	{ "smashwipeout", 	"SmashModeWipeout",	_smwipeout_um_init, UM_4ON4, 	 0 },	
+	{ "smashffa",	"SmashMode  FFA", 		_ffasm_um_init, 	UM_FFA, 	 0 },
+	{ "smash1on1",	"SmashMode 1on1", 		_1on1sm_um_init, 	UM_1ON1, 	 0 },
+	{ "smash2on2",	"SmashMode 2on2",		_2on2sm_um_init, 	UM_2ON2, 	 0 },
+	{ "smashwipeout", 	"SmashMode Wipeout",_smwipeout_um_init, UM_4ON4, 	 0 },	
+	{ "smashbmffa",	"SmashMode Bagman FFA", _ffasmbm_um_init, 	UM_FFA, 	 0 },
+	{ "smashbmtdm",	"SmashMode Bagman TDM", _tdmsmbm_um_init, 	UM_4ON4, 	 0 },
 };
 
 int um_cnt = sizeof(um_list) / sizeof(um_list[0]);

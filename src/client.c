@@ -2256,7 +2256,7 @@ void PutClientInServer(void)
 			self->invincible_time = 1;
 			self->invincible_finished = g_globalvars.time + 2;
 		}
-			self->s.v.armorvalue = 0;
+		self->s.v.armorvalue = 0;
 		self->last_attacker = self;
 	}
 	self->wants_to_grab = !iKey(self, "disableautograb"); // reset state of grab according to player pref
@@ -5071,7 +5071,14 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 		logfrag(last_attacker, targ);
 
 		G_bprint(PRINT_MEDIUM, "%s%s%s%s%3.1f%s\n", victimname, deathstring, attackername, deathstring2, targ->s.v.armorvalue, deathstring3);
-		
+
+		if (targ->hasbag)
+		{
+			last_attacker->hasbag = true;
+			targ->hasbag = false;
+			G_bprint(PRINT_MEDIUM, "%s now has the bag!\n", attackername);
+		}
+
 		return;
 	}
 	else

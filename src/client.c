@@ -2248,8 +2248,15 @@ void PutClientInServer(void)
 		self->super_time = 0;
 		self->super_damage_finished = 0;
 		self->s.v.items = (int)self->s.v.items & ~( IT_KEY1 |
-			IT_KEY2 | IT_INVISIBILITY | IT_INVULNERABILITY | IT_SUIT | IT_QUAD | IT_SUPERHEALTH);
-		self->s.v.armorvalue = 0;
+			IT_KEY2 | IT_INVISIBILITY | IT_SUIT | IT_QUAD | IT_SUPERHEALTH);
+
+		if (match_in_progress)
+		{
+			items |= IT_INVULNERABILITY;
+			self->invincible_time = 1;
+			self->invincible_finished = g_globalvars.time + 2;
+		}
+			self->s.v.armorvalue = 0;
 		self->last_attacker = self;
 	}
 	self->wants_to_grab = !iKey(self, "disableautograb"); // reset state of grab according to player pref

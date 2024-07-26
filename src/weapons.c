@@ -2954,6 +2954,13 @@ void W_WeaponFrame()
 
 		SuperDamageSound();
 		W_Attack();
+
+		if (cvar("k_smashmode") && (self->invincible_time > g_globalvars.time))
+		{
+			self->invincible_time = 0;
+			self->invincible_finished = 0;
+			self->s.v.items = (int)self->s.v.items & ~( IT_INVULNERABILITY );
+		}
 	}
 }
 

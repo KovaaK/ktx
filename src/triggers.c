@@ -950,6 +950,11 @@ void hurt_items()
 			other->s.v.nextthink = g_globalvars.time;
 		}
 	}
+	else if (streq(other->classname, "bag"))
+	{
+		// Cause bag to respawn.
+		ent_remove(other);
+	}
 }
 
 void hurt_touch()

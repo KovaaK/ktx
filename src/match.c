@@ -634,7 +634,7 @@ void BagTouch()
 
 	cl_refresh_plus_scores(other); // update players status bar faster.  Not sure if relevant.
 
-	G_bprint(PRINT_MEDIUM, "%s picked up the bag!\n", other->netname);
+	G_cp2all("%s picked up the bag!", other->netname);
 	sound(other, CHAN_ITEM, "weapons/lock4.wav", 1, ATTN_NORM);
 	stuffcmd(other, "bf\n");
 	ent_remove(self);

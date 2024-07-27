@@ -627,9 +627,6 @@ void BagTouch()
 		self->s.v.nextthink = g_globalvars.time + 90;
 	}
 
-//	self->ctf_flag = (self->ctf_flag & CTF_FLAG); // was trying these to trigger a glow effect, but it didn't work.
-//	other->s.v.effects = (int)other->s.v.effects | EF_FLAG2;
-//	other->s.v.effects = (int)other->s.v.effects | EF_FLAG1;
 	other->hasbag = true;
 
 	cl_refresh_plus_scores(other); // update players status bar faster.  Not sure if relevant.

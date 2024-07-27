@@ -4136,6 +4136,10 @@ void CheckLightEffects(void)
 		dim = true;
 	}
 
+	if (self->hasbag)
+	{
+		g = true;
+	}
 	if ((self->invincible_finished > g_globalvars.time) && (deathmatch != 4))
 	{
 		r = true;

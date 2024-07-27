@@ -601,6 +601,7 @@ void teleport_player(gedict_t *player, vec3_t origin, vec3_t angles, int flags)
 	}
 
 	player->s.v.flags -= (int)player->s.v.flags & FL_ONGROUND;
+	player->has_double_jump = true;
 
 	// perform telefragging code
 

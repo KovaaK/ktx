@@ -871,19 +871,25 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	}
 
 	// Core Smashmode mechanics
-	if (cvar("k_smashmode") && attacker != targ)
+	if (cvar("k_smashmode") && (attacker != targ || targ->hasbag))
 	{
 		if (targ->invincible_finished <= g_globalvars.time && (!streq(attacker->classname, "trigger_hurt")))
 		{
 			if (!streq(targteam, attackerteam) || tp_num() == 0)
-			{
+			{ // opposite teams, add % and give credit for kills
 				hdp = GetHandicap(targ);
 				targ->s.v.armorvalue += native_damage * 0.25 / ((float)hdp / 100); //add to armor per original damage done
 				if (attacker->s.v.health > 0)
 					attacker->s.v.health = targ->s.v.armorvalue; // set attacker's health to the target's armorvalue
 				targ->last_deathtype = targ->deathtype;
+				targ->last_attacker = attacker;
 			}
-			targ->last_attacker = attacker;
+			else if (attacker == targ && targ->hasbag)
+			{ // self damage in bagman
+				targ->s.v.armorvalue += native_damage * 0.25; // only do the armor add
+			}
+			else // team attack.  don't apply damage, but do give credit if it kills.
+				targ->last_attacker = attacker;
 		}
 		
 		//If target was grabbing the ledge, knock him off and block grab timer for 1s

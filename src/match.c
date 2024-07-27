@@ -707,6 +707,12 @@ void BagmanTimerThink()
 			bagp->s.v.frags += 1;
 			bagp->s.v.armorvalue += 25;
 			sound(bagp, CHAN_AUTO, "items/suit.wav", 1, ATTN_NORM);
+			WriteByte( MSG_MULTICAST, SVC_TEMPENTITY);
+			WriteByte( MSG_MULTICAST, TE_LAVASPLASH);
+			WriteCoord( MSG_MULTICAST, bagp->s.v.origin[0]);
+			WriteCoord( MSG_MULTICAST, bagp->s.v.origin[1]);
+			WriteCoord( MSG_MULTICAST, bagp->s.v.origin[2]);
+			trap_multicast(PASSVEC3(bagp->s.v.origin), MULTICAST_PHS);
 		}
 	}
 

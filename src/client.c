@@ -5076,7 +5076,7 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 
 		G_bprint(PRINT_MEDIUM, "%s%s%s%s%3.1f%s\n", victimname, deathstring, attackername, deathstring2, targ->s.v.armorvalue, deathstring3);
 
-		if (targ->hasbag)
+		if (targ->hasbag && cvar("k_bagtokiller"))
 		{
 			last_attacker->hasbag = true;
 			last_attacker->s.v.armorvalue = max(0, last_attacker->s.v.armorvalue - 200);
@@ -5423,7 +5423,7 @@ void ClientObituary(gedict_t *targ, gedict_t *attacker)
 			if (dtTELE1 == targ->deathtype)
 			{
 				deathstring = " was telefragged by ";
-				if (targ->hasbag)
+				if (targ->hasbag && cvar("k_bagtokiller"))
 				{
 					attacker->hasbag = true;
 					attacker->s.v.armorvalue = max(0, attacker->s.v.armorvalue - 200);

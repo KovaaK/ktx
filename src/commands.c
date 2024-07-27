@@ -221,6 +221,7 @@ void ToggleVwep();
 void TogglePause();
 void ToggleArena();
 void ToggleSmashArena();
+void ToggleBagToKiller();
 
 void Spawn666Time();
 
@@ -580,6 +581,7 @@ const char CD_NODESC[] = "no desc";
 #define CD_RA_POS			"RA line position"
 #define CD_ARENA			"toggle rocket arena"
 #define CD_SMARENA			"toggle smash rocket arena"
+#define CD_BAG2KILL			"toggle bag awarded to killer of bagman"
 // }
 // { Clan Arena
 #define CD_CARENA			"toggle clan arena"
@@ -966,6 +968,7 @@ cmd_t cmds[] =
 	{ "ra_pos", 					ra_PrintPos, 					0, 			CF_PLAYER, 																CD_RA_POS },
 	{ "arena", 						ToggleArena, 					0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_ARENA },
 	{ "smashmodearena", 			ToggleSmashArena,				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_SMARENA },
+	{ "bagtokiller", 				ToggleBagToKiller,				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_BAG2KILL },
 	// }
 	{ "force_spec", 				force_spec, 					0, 			CF_BOTH_ADMIN | CF_PARAMS, 												CD_FORCE_SPEC },
 	// { bans
@@ -4108,7 +4111,8 @@ const char common_um_init[] =
 	"k_race 0\n"					// disable Race by default
 	"k_hoonymode 0\n"				// disable HoonyMode by default
 	"k_smashmode 0\n"				// disable SmashMode by default
-	"k_bagman 0\n"					// disable SmashMode by default
+	"k_bagman 0\n"					// disable Bagman by default
+	"k_bagtokiller 0\n"				// disable Bag To Killer by default
 	"k_freshteams 0\n"				// disable FreshTeams by default
 	"k_nosweep 0\n"					// disable nosweep by default
 	"k_spec_info 1\n"				// allow spectators receive took info during game
@@ -8666,6 +8670,16 @@ void ToggleSmashArena()
 		if (!cvar("k_smashmode"))
 			cvar_toggle_msg(self, "k_smashmode", redtext("SmashMode"));
 	}
+}
+
+void ToggleBagToKiller()
+{
+	if (!is_rules_change_allowed())
+	{
+		return;
+	}
+
+	cvar_toggle_msg(self, "k_bagtokiller", redtext("Bag Awarded to Killer"));
 }
 
 void Spawn666Time()

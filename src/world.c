@@ -886,6 +886,7 @@ void FirstFrame()
 // { smashmodes
 	RegisterCvarEx("k_smashmode", "0");
 	RegisterCvarEx("k_bagman", "0");
+	RegisterCvarEx("k_bagtokiller", "0");
 // }
 
 // { freshteams dmm1

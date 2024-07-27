@@ -601,6 +601,8 @@ void BagTouch()
 {
 	if (other->ct != ctPlayer)
 	{
+		if (streq(other->classname, "trigger_hurt"))
+			ent_remove(self);
 		return;
 	}
 
@@ -628,6 +630,7 @@ void BagTouch()
 	}
 
 	other->hasbag = true;
+	other->s.v.armorvalue = max(0, other->s.v.armorvalue - 200);
 
 	cl_refresh_plus_scores(other); // update players status bar faster.  Not sure if relevant.
 
@@ -660,12 +663,13 @@ void SpawnBag()
 	item->s.v.velocity[1] = i_rnd(-100, 100);
 	item->s.v.velocity[2] = 400;
 	item->s.v.flags = FL_ITEM;
+	item->s.v.effects = EF_GREEN;
 	item->s.v.solid = SOLID_TRIGGER;
 	item->s.v.movetype = MOVETYPE_BOUNCE;
 	setmodel(item, "progs/backpack.mdl");
 	setsize(item, -16, -16, 0, 16, 16, 56);
 	item->touch = (func_t) BagTouch;
-	item->s.v.nextthink = g_globalvars.time + 5;
+	item->s.v.nextthink = g_globalvars.time + 10;
 	item->think = (func_t) SUB_Remove;
 
 	sound(item, CHAN_VOICE, "items/itembk2.wav", 1, ATTN_NORM);	// play respawn sound

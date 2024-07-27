@@ -1653,6 +1653,13 @@ void PrintCountdown(int seconds)
 		}
 	}
 
+	if (cvar("k_smashmode"))
+	{
+		strlcat(text, va("%s %7s\n", "Smash", redtext("on")), sizeof(text));
+		if (cvar("k_bagman"))
+			strlcat(text, va("%s %6s\n", "Bagman", redtext("on")), sizeof(text));
+	}
+
 	if (isHoonyModeAny())
 	{
 		int hm_timelimit = HM_timelimit();

@@ -672,7 +672,7 @@ void SpawnBag()
 	item->s.v.nextthink = g_globalvars.time + 10;
 	item->think = (func_t) SUB_Remove;
 
-	sound(item, CHAN_VOICE, "items/itembk2.wav", 1, ATTN_NORM);	// play respawn sound
+	sound(item, CHAN_VOICE, "items/suit.wav", 1, ATTN_NORM);	// play respawn sound
 }
 
 void BagmanTimerThink()

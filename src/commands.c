@@ -4189,7 +4189,7 @@ const char _ffasmbm_um_init[] =     // SmashMode Bagman FFA rules
 	"maxclients 8\n"				// 
 	"k_maxclients 8\n"				// 
 	"fraglimit 50\n" 				// 
-	"timelimit 0\n"					// 
+	"timelimit 10\n"				// 
 	"k_smashmode 1\n"				//
 	"k_bagman 1\n"					//
 	"k_ctf_runes 1\n"				//

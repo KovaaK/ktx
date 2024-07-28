@@ -904,6 +904,21 @@ void SP_info_player_deathmatch()
 	setsize(self, 0, 0, 0, 0, 0, 0);
 }
 
+void SP_info_bagspawn()
+{
+	gedict_t *spot;
+	vec3_t saved_org;
+	int i = 0;
+
+	for (spot = world; (spot = find(spot, FOFCLSN, self->classname)); i++)
+	{
+		if (spot == self)
+		{
+			self->cnt = i; // copied from deathmatch spawn above, maybe having the spawn index stored could be useful
+		}
+	}
+}
+
 // I'v put next code in function, since it appear frequently
 void k_respawn(gedict_t *p, qbool body)
 {

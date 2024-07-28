@@ -653,8 +653,10 @@ void SpawnBag()
 		return;
 	}
 
-
-	spot = SelectSpawnPoint("info_player_deathmatch");
+	if (find_cnt(FOFCLSN, "info_bagspawn") > 0)
+		spot = SelectSpawnPoint("info_bagspawn");
+	else
+		spot = SelectSpawnPoint("info_player_deathmatch");
 
 	item = spawn();
 	setorigin(item, spot->s.v.origin[0], spot->s.v.origin[1], spot->s.v.origin[2] - 24);

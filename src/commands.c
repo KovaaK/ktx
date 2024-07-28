@@ -4192,6 +4192,7 @@ const char _ffasmbm_um_init[] =     // SmashMode Bagman FFA rules
 	"timelimit 10\n"				// 
 	"k_smashmode 1\n"				//
 	"k_bagman 1\n"					//
+	"k_bagtokiller 0\n"				//
 	"k_ctf_runes 1\n"				//
 	"k_ctf_rune_power_res 0\n"		//
 	"k_ctf_rune_power_str 0\n"		// 
@@ -4215,10 +4216,11 @@ const char _tdmsmbm_um_init[] =     // SmashMode Bagman TDM rules
 	"coop 0\n"						// no coop
 	"maxclients 8\n"				// 
 	"k_maxclients 8\n"				// 
-	"fraglimit 0\n"					// 
+	"fraglimit 50\n"				// 
 	"timelimit 5\n"					// 
 	"k_smashmode 1\n"				//
 	"k_bagman 1\n"					//
+	"k_bagtokiller 1\n"				//
 	"k_ctf_runes 1\n"				//
 	"k_ctf_rune_power_res 0\n"		//
 	"k_ctf_rune_power_str 0\n"		// 

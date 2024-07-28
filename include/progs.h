@@ -1210,6 +1210,7 @@ typedef struct gedict_s
 	int last_deathtype;					// on obit, deathtype will be trigger_hurt or tfrag, so we have to track the previous instance of damage that knocked us back.
 	// bagman
 	qbool hasbag;
+	float bag_pickup_time;	
 // }
 
 } gedict_t;

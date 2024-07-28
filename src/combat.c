@@ -306,7 +306,7 @@ void Killed(gedict_t *targ, gedict_t *attacker, gedict_t *inflictor)
 	self->s.v.takedamage = DAMAGE_NO;
 	self->touch = (func_t) SUB_Null;
 	self->s.v.effects = 0;
-	if (self->hasbag)
+	if (self->hasbag && g_globalvars.time - self->bag_pickup_time > 1)
 	{
 		self->hasbag = false;
 		G_cp2all("%s lost the bag!", self->netname);

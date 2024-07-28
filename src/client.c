@@ -5091,9 +5091,10 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 
 		G_bprint(PRINT_MEDIUM, "%s%s%s%s%3.1f%s\n", victimname, deathstring, attackername, deathstring2, targ->s.v.armorvalue, deathstring3);
 
-		if (targ->hasbag && cvar("k_bagtokiller"))
+		if (targ->hasbag && cvar("k_bagtokiller") && g_globalvars.time - targ->bag_pickup_time > 1)
 		{
 			last_attacker->hasbag = true;
+			last_attacker->bag_pickup_time = g_globalvars.time;
 			last_attacker->s.v.armorvalue = max(0, last_attacker->s.v.armorvalue - 200);
 			targ->hasbag = false;
 			G_cp2all("%s now has the bag!", attackername);
@@ -5438,9 +5439,10 @@ void ClientObituary(gedict_t *targ, gedict_t *attacker)
 			if (dtTELE1 == targ->deathtype)
 			{
 				deathstring = " was telefragged by ";
-				if (targ->hasbag && cvar("k_bagtokiller"))
+				if (targ->hasbag && cvar("k_bagtokiller") && g_globalvars.time - targ->bag_pickup_time > 1)
 				{
 					attacker->hasbag = true;
+					attacker->bag_pickup_time = g_globalvars.time;
 					attacker->s.v.armorvalue = max(0, attacker->s.v.armorvalue - 200);
 					targ->hasbag = false;
 					G_cp2all("%s now has the bag!", attackername);

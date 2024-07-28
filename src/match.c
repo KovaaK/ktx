@@ -630,6 +630,7 @@ void BagTouch()
 	}
 
 	other->hasbag = true;
+	other->bag_pickup_time = g_globalvars.time;
 	other->s.v.armorvalue = max(0, other->s.v.armorvalue - 200);
 
 	cl_refresh_plus_scores(other); // update players status bar faster.  Not sure if relevant.

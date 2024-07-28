@@ -5081,7 +5081,7 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 			last_attacker->hasbag = true;
 			last_attacker->s.v.armorvalue = max(0, last_attacker->s.v.armorvalue - 200);
 			targ->hasbag = false;
-			G_bprint(PRINT_MEDIUM, "%s now has the bag!\n", attackername);
+			G_cp2all("%s now has the bag!", attackername);
 		}
 
 		return;
@@ -5428,7 +5428,7 @@ void ClientObituary(gedict_t *targ, gedict_t *attacker)
 					attacker->hasbag = true;
 					attacker->s.v.armorvalue = max(0, attacker->s.v.armorvalue - 200);
 					targ->hasbag = false;
-					G_bprint(PRINT_MEDIUM, "%s now has the bag!\n", attackername);
+					G_cp2all("%s now has the bag!", attackername);
 				}
 			}
 			else if (dtSQUISH == targ->deathtype)

@@ -306,7 +306,11 @@ void Killed(gedict_t *targ, gedict_t *attacker, gedict_t *inflictor)
 	self->s.v.takedamage = DAMAGE_NO;
 	self->touch = (func_t) SUB_Null;
 	self->s.v.effects = 0;
-	self->hasbag = false;
+	if (self->hasbag)
+	{
+		self->hasbag = false;
+		G_cp2all("%s lost the bag!", self->netname);
+	}
 
 	monster_death_use();
 

@@ -2488,7 +2488,7 @@ void SmashDoubleJump()
 {
 	vec3_t source, dest;
 	
-	if (cvar ("k_smashmode") && self->has_double_jump && ((int)(self->s.v.flags)) & FL_JUMPRELEASED)
+	if (cvar ("k_smashmode") && self->has_double_jump && ((int)(self->s.v.flags)) & FL_JUMPRELEASED && !(self->hasbag))
 	{
 		// Don't let the player use this to cancel upwards velocity
 		if (self->s.v.velocity[2] > 100)

@@ -436,6 +436,7 @@ const char CD_NODESC[] = "no desc";
 #define CD_1ON1SM			"SmashMode 1on1 settings"
 #define CD_2ON2SM			"SmashMode 2on2 settings"
 #define CD_FFASMBM			"SmashMode Bagman ffa settings"
+#define CD_1ON1SMBM			"SmashMode Bagman 1on1 settings"
 #define CD_TDMSMBM			"SmashMode Bagman tdm settings"
 #define CD_WIPEOUTSM		"SmashMode Wipeout settings"
 #define CD_2ON2BLITZ		"Blitz 2v2"
@@ -821,8 +822,9 @@ cmd_t cmds[] =
 	{ "smashmode1on1", 				DEF(UserMode), 					18, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_1ON1SM },
 	{ "smashmode2on2", 				DEF(UserMode), 					19, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_2ON2SM },
 	{ "smashmodewipeout", 			DEF(UserMode), 					20, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_WIPEOUTSM },
-	{ "smashmodebm", 				DEF(UserMode), 					21, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_FFASMBM },
-	{ "smashmodetdmbm",				DEF(UserMode), 					22, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_TDMSMBM },
+	{ "smashbagffa",				DEF(UserMode), 					21, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_FFASMBM },
+	{ "smashbagtdm",				DEF(UserMode), 					22, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_TDMSMBM },
+	{ "smashbag1on1",				DEF(UserMode), 					23, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_1ON1SMBM },
 
 	{ "practice", 					TogglePractice, 				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_PRACTICE },
 	{ "wp_reset", 					Wp_Reset, 						0, 			CF_PLAYER, 																CD_WP_RESET },
@@ -4193,10 +4195,6 @@ const char _ffasmbm_um_init[] =     // SmashMode Bagman FFA rules
 	"k_smashmode 1\n"				//
 	"k_bagman 1\n"					//
 	"k_bagtokiller 0\n"				//
-	"k_ctf_runes 1\n"				//
-	"k_ctf_rune_power_res 0\n"		//
-	"k_ctf_rune_power_str 0\n"		// 
-	"k_ctf_rune_power_hst 0\n"		// 
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_overtime 0\n"				// 
@@ -4221,10 +4219,6 @@ const char _tdmsmbm_um_init[] =     // SmashMode Bagman TDM rules
 	"k_smashmode 1\n"				//
 	"k_bagman 1\n"					//
 	"k_bagtokiller 1\n"				//
-	"k_ctf_runes 1\n"				//
-	"k_ctf_rune_power_res 0\n"		//
-	"k_ctf_rune_power_str 0\n"		// 
-	"k_ctf_rune_power_hst 0\n"		// 
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_disallow_weapons 0\n"		// don't disable GL
@@ -4236,6 +4230,30 @@ const char _tdmsmbm_um_init[] =     // SmashMode Bagman TDM rules
 	"k_lockmax 2\n"					// maximum number of teams
 	"k_mode 2\n"
 	"sv_antilag 1\n"				// antilag on	
+	"k_spectalk 1\n"				// enable spec talk by default
+	"dp 0\n"						// drop pack
+;
+
+const char _1on1smbm_um_init[] =     // SmashMode Bagman 1on1 rules
+	"coop 0\n"						// no coop
+	"maxclients 2\n"				// 
+	"k_maxclients 2\n"				// 
+	"fraglimit 50\n" 				// 
+	"timelimit 10\n"				// 
+	"k_smashmode 1\n"				//
+	"k_bagman 1\n"					//
+	"k_bagtokiller 1\n"				//
+	"teamplay 0\n"					// 
+	"deathmatch 4\n"				// weapons stay
+	"k_overtime 0\n"				// 
+	"k_disallow_weapons 0\n"		// don't disable GL
+	"k_exttime 3\n"					// 
+	"k_pow 0\n"						// powerups
+	"k_membercount 0\n"				// no efect in duel
+	"k_lockmin 0\n"					// no efect in duel
+	"k_lockmax 0\n"					// no efect in duel
+	"k_mode 1\n"
+	"sv_antilag 1\n"				// antilag on
 	"k_spectalk 1\n"				// enable spec talk by default
 	"dp 0\n"						// drop pack
 ;
@@ -4616,6 +4634,7 @@ usermode um_list[] =
 	{ "smashwipeout", 	"SmashMode Wipeout",_smwipeout_um_init, UM_4ON4, 	 0 },	
 	{ "smashbmffa",	"SmashMode Bagman FFA", _ffasmbm_um_init, 	UM_FFA, 	 0 },
 	{ "smashbmtdm",	"SmashMode Bagman TDM", _tdmsmbm_um_init, 	UM_4ON4, 	 0 },
+	{ "smashbm1on1","SmashMode Bagman 1on1",_1on1smbm_um_init, 	UM_1ON1, 	 0 },
 };
 
 int um_cnt = sizeof(um_list) / sizeof(um_list[0]);

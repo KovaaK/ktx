@@ -5091,7 +5091,7 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 
 		G_bprint(PRINT_MEDIUM, "%s%s%s%s%3.1f%s\n", victimname, deathstring, attackername, deathstring2, targ->s.v.armorvalue, deathstring3);
 
-		if (targ->haspack && cvar("k_packtokiller") && g_globalvars.time - targ->pack_pickup_time > 1)
+		if (targ->haspack && cvar("k_packtokiller") && g_globalvars.time - targ->pack_pickup_time > 2)
 		{
 			last_attacker->haspack = true;
 			last_attacker->pack_pickup_time = g_globalvars.time;
@@ -5439,7 +5439,7 @@ void ClientObituary(gedict_t *targ, gedict_t *attacker)
 			if (dtTELE1 == targ->deathtype)
 			{
 				deathstring = " was telefragged by ";
-				if (targ->haspack && cvar("k_packtokiller") && g_globalvars.time - targ->pack_pickup_time > 1)
+				if (targ->haspack && cvar("k_packtokiller") && g_globalvars.time - targ->pack_pickup_time > 2)
 				{
 					attacker->haspack = true;
 					attacker->pack_pickup_time = g_globalvars.time;

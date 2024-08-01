@@ -1660,7 +1660,7 @@ void PrintCountdown(int seconds)
 	{
 		strlcat(text, va("%s %7s\n", "Smash", redtext("on")), sizeof(text));
 		if (cvar("k_packman"))
-			strlcat(text, va("%s %6s\n", "Packman", redtext("on")), sizeof(text));
+			strlcat(text, va("%s %5s\n", "Packman", redtext("on")), sizeof(text));
 	}
 
 	if (isHoonyModeAny())

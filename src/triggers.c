@@ -951,9 +951,9 @@ void hurt_items()
 			other->s.v.nextthink = g_globalvars.time;
 		}
 	}
-	else if (streq(other->classname, "bag"))
+	else if (streq(other->classname, "pack"))
 	{
-		// Cause bag to respawn.
+		// Cause pack to respawn.
 		ent_remove(other);
 	}
 }

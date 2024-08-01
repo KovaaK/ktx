@@ -221,7 +221,7 @@ void ToggleVwep();
 void TogglePause();
 void ToggleArena();
 void ToggleSmashArena();
-void ToggleBagToKiller();
+void TogglePackToKiller();
 
 void Spawn666Time();
 
@@ -435,9 +435,9 @@ const char CD_NODESC[] = "no desc";
 #define CD_FFASM			"SmashMode ffa settings"
 #define CD_1ON1SM			"SmashMode 1on1 settings"
 #define CD_2ON2SM			"SmashMode 2on2 settings"
-#define CD_FFASMBM			"SmashMode Bagman ffa settings"
-#define CD_1ON1SMBM			"SmashMode Bagman 1on1 settings"
-#define CD_TDMSMBM			"SmashMode Bagman tdm settings"
+#define CD_FFASMBM			"SmashMode Packman ffa settings"
+#define CD_1ON1SMBM			"SmashMode Packman 1on1 settings"
+#define CD_TDMSMBM			"SmashMode Packman tdm settings"
 #define CD_WIPEOUTSM		"SmashMode Wipeout settings"
 #define CD_2ON2BLITZ		"Blitz 2v2"
 #define CD_4ON4BLITZ		"Blitz 4v4"
@@ -582,7 +582,7 @@ const char CD_NODESC[] = "no desc";
 #define CD_RA_POS			"RA line position"
 #define CD_ARENA			"toggle rocket arena"
 #define CD_SMARENA			"toggle smash rocket arena"
-#define CD_BAG2KILL			"toggle bag awarded to killer of bagman"
+#define CD_PACK2KILL		"toggle pack awarded to killer of packman"
 // }
 // { Clan Arena
 #define CD_CARENA			"toggle clan arena"
@@ -822,9 +822,9 @@ cmd_t cmds[] =
 	{ "smashmode1on1", 				DEF(UserMode), 					18, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_1ON1SM },
 	{ "smashmode2on2", 				DEF(UserMode), 					19, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_2ON2SM },
 	{ "smashmodewipeout", 			DEF(UserMode), 					20, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_WIPEOUTSM },
-	{ "smashbagffa",				DEF(UserMode), 					21, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_FFASMBM },
-	{ "smashbagtdm",				DEF(UserMode), 					22, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_TDMSMBM },
-	{ "smashbag1on1",				DEF(UserMode), 					23, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_1ON1SMBM },
+	{ "smashpackffa",				DEF(UserMode), 					21, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_FFASMBM },
+	{ "smashpacktdm",				DEF(UserMode), 					22, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_TDMSMBM },
+	{ "smashpack1on1",				DEF(UserMode), 					23, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_1ON1SMBM },
 
 	{ "practice", 					TogglePractice, 				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_PRACTICE },
 	{ "wp_reset", 					Wp_Reset, 						0, 			CF_PLAYER, 																CD_WP_RESET },
@@ -970,7 +970,7 @@ cmd_t cmds[] =
 	{ "ra_pos", 					ra_PrintPos, 					0, 			CF_PLAYER, 																CD_RA_POS },
 	{ "arena", 						ToggleArena, 					0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_ARENA },
 	{ "smashmodearena", 			ToggleSmashArena,				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_SMARENA },
-	{ "bagtokiller", 				ToggleBagToKiller,				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_BAG2KILL },
+	{ "packtokiller", 				TogglePackToKiller,				0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_PACK2KILL },
 	// }
 	{ "force_spec", 				force_spec, 					0, 			CF_BOTH_ADMIN | CF_PARAMS, 												CD_FORCE_SPEC },
 	// { bans
@@ -4113,8 +4113,8 @@ const char common_um_init[] =
 	"k_race 0\n"					// disable Race by default
 	"k_hoonymode 0\n"				// disable HoonyMode by default
 	"k_smashmode 0\n"				// disable SmashMode by default
-	"k_bagman 0\n"					// disable Bagman by default
-	"k_bagtokiller 0\n"				// disable Bag To Killer by default
+	"k_packman 0\n"					// disable Packman by default
+	"k_packtokiller 0\n"			// disable Pack To Killer by default
 	"k_freshteams 0\n"				// disable FreshTeams by default
 	"k_nosweep 0\n"					// disable nosweep by default
 	"k_spec_info 1\n"				// allow spectators receive took info during game
@@ -4170,7 +4170,7 @@ const char _ffasm_um_init[] =      // SmashMode rules
 	"fraglimit 10\n"				// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
-	"k_bagman 0\n"					//
+	"k_packman 0\n"					//
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_overtime 0\n"				// 
@@ -4186,15 +4186,15 @@ const char _ffasm_um_init[] =      // SmashMode rules
 	"dp 0\n"						// drop pack
 ;
 
-const char _ffasmbm_um_init[] =     // SmashMode Bagman FFA rules
+const char _ffasmbm_um_init[] =     // SmashMode Packman FFA rules
 	"coop 0\n"						// no coop
 	"maxclients 8\n"				// 
 	"k_maxclients 8\n"				// 
 	"fraglimit 50\n" 				// 
 	"timelimit 10\n"				// 
 	"k_smashmode 1\n"				//
-	"k_bagman 1\n"					//
-	"k_bagtokiller 0\n"				//
+	"k_packman 1\n"					//
+	"k_packtokiller 0\n"				//
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_overtime 0\n"				// 
@@ -4210,15 +4210,15 @@ const char _ffasmbm_um_init[] =     // SmashMode Bagman FFA rules
 	"dp 0\n"						// drop pack
 ;
 
-const char _tdmsmbm_um_init[] =     // SmashMode Bagman TDM rules
+const char _tdmsmbm_um_init[] =     // SmashMode Packman TDM rules
 	"coop 0\n"						// no coop
 	"maxclients 8\n"				// 
 	"k_maxclients 8\n"				// 
 	"fraglimit 50\n"				// 
 	"timelimit 5\n"					// 
 	"k_smashmode 1\n"				//
-	"k_bagman 1\n"					//
-	"k_bagtokiller 1\n"				//
+	"k_packman 1\n"					//
+	"k_packtokiller 1\n"				//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_disallow_weapons 0\n"		// don't disable GL
@@ -4234,15 +4234,15 @@ const char _tdmsmbm_um_init[] =     // SmashMode Bagman TDM rules
 	"dp 0\n"						// drop pack
 ;
 
-const char _1on1smbm_um_init[] =     // SmashMode Bagman 1on1 rules
+const char _1on1smbm_um_init[] =     // SmashMode Packman 1on1 rules
 	"coop 0\n"						// no coop
 	"maxclients 2\n"				// 
 	"k_maxclients 2\n"				// 
 	"fraglimit 50\n" 				// 
 	"timelimit 10\n"				// 
 	"k_smashmode 1\n"				//
-	"k_bagman 1\n"					//
-	"k_bagtokiller 1\n"				//
+	"k_packman 1\n"					//
+	"k_packtokiller 1\n"				//
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_overtime 0\n"				// 
@@ -4265,7 +4265,7 @@ const char _1on1sm_um_init[] =      // SmashMode rules
 	"fraglimit 10\n"				// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
-	"k_bagman 0\n"					//
+	"k_packman 0\n"					//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_overtime 2\n"				// 
@@ -4288,7 +4288,7 @@ const char _2on2sm_um_init[] =
 	"fraglimit 0\n"					// 
 	"timelimit 5\n"					// 
 	"k_smashmode 1\n"				//
-	"k_bagman 0\n"					//
+	"k_packman 0\n"					//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_disallow_weapons 0\n"		// don't disable GL
@@ -4315,7 +4315,7 @@ const char _smwipeout_um_init[] =
 	"fraglimit 0\n"					// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
-	"k_bagman 0\n"					//
+	"k_packman 0\n"					//
 	"teamplay 4\n"					// 
 	"deathmatch 4\n"				// 
 	"k_disallow_weapons 0\n"		// don't disable GL
@@ -4632,9 +4632,9 @@ usermode um_list[] =
 	{ "smash1on1",	"SmashMode 1on1", 		_1on1sm_um_init, 	UM_1ON1, 	 0 },
 	{ "smash2on2",	"SmashMode 2on2",		_2on2sm_um_init, 	UM_2ON2, 	 0 },
 	{ "smashwipeout", 	"SmashMode Wipeout",_smwipeout_um_init, UM_4ON4, 	 0 },	
-	{ "smashbmffa",	"SmashMode Bagman FFA", _ffasmbm_um_init, 	UM_FFA, 	 0 },
-	{ "smashbmtdm",	"SmashMode Bagman TDM", _tdmsmbm_um_init, 	UM_4ON4, 	 0 },
-	{ "smashbm1on1","SmashMode Bagman 1on1",_1on1smbm_um_init, 	UM_1ON1, 	 0 },
+	{ "smashbmffa",	"SmashMode Packman FFA", _ffasmbm_um_init, 	UM_FFA, 	 0 },
+	{ "smashbmtdm",	"SmashMode Packman TDM", _tdmsmbm_um_init, 	UM_4ON4, 	 0 },
+	{ "smashbm1on1","SmashMode Packman 1on1",_1on1smbm_um_init, UM_1ON1, 	 0 },
 };
 
 int um_cnt = sizeof(um_list) / sizeof(um_list[0]);
@@ -8693,14 +8693,14 @@ void ToggleSmashArena()
 	}
 }
 
-void ToggleBagToKiller()
+void TogglePackToKiller()
 {
 	if (!is_rules_change_allowed())
 	{
 		return;
 	}
 
-	cvar_toggle_msg(self, "k_bagtokiller", redtext("Bag Awarded to Killer"));
+	cvar_toggle_msg(self, "k_packtokiller", redtext("Pack Awarded to Killer"));
 }
 
 void Spawn666Time()

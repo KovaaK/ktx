@@ -1208,9 +1208,9 @@ typedef struct gedict_s
 	qbool wants_to_grab;				// true when player is holding +grab or has autograb on
 	qbool has_double_jump;				
 	int last_deathtype;					// on obit, deathtype will be trigger_hurt or tfrag, so we have to track the previous instance of damage that knocked us back.
-	// bagman
-	qbool hasbag;
-	float bag_pickup_time;	
+	// packman
+	qbool haspack;
+	float pack_pickup_time;	
 // }
 
 } gedict_t;

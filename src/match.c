@@ -597,7 +597,7 @@ void CheckOvertime()
 	}
 }
 
-void BagTouch()
+void PackTouch()
 {
 	if (other->ct != ctPlayer)
 	{
@@ -629,27 +629,27 @@ void BagTouch()
 		self->s.v.nextthink = g_globalvars.time + 90;
 	}
 
-	other->hasbag = true;
-	other->bag_pickup_time = g_globalvars.time;
+	other->haspack = true;
+	other->pack_pickup_time = g_globalvars.time;
 	other->s.v.armorvalue = max(0, other->s.v.armorvalue - 200);
 
 	cl_refresh_plus_scores(other); // update players status bar faster.  Not sure if relevant.
 
-	G_cp2all("%s picked up the bag!", other->netname);
+	G_cp2all("%s picked up the pack!", other->netname);
 	sound(other, CHAN_ITEM, "weapons/lock4.wav", 1, ATTN_NORM);
 	stuffcmd(other, "bf\n");
 	ent_remove(self);
 }
 
-void SpawnBag()
+void SpawnPack()
 {
 	gedict_t *spot;
 	gedict_t *item;
 	gedict_t *e;
 	float movetype = MOVETYPE_NONE;
 
-	// Check if there are any bags out there already, and if so don't spawn anything.
-	for (e = world; (e = find(e, FOFCLSN, "bag"));)
+	// Check if there are any packs out there already, and if so don't spawn anything.
+	for (e = world; (e = find(e, FOFCLSN, "pack"));)
 	{
 		return;
 	}
@@ -661,7 +661,7 @@ void SpawnBag()
 
 	item = spawn();
 	setorigin(item, spot->s.v.origin[0], spot->s.v.origin[1], spot->s.v.origin[2] - 24);
-	item->classname = "bag";
+	item->classname = "pack";
 	item->s.v.velocity[0] = i_rnd(-100, 100);
 	item->s.v.velocity[1] = i_rnd(-100, 100);
 	item->s.v.velocity[2] = 400;
@@ -671,58 +671,58 @@ void SpawnBag()
 	item->s.v.movetype = MOVETYPE_BOUNCE;
 	setmodel(item, "progs/backpack.mdl");
 	setsize(item, -16, -16, 0, 16, 16, 56);
-	item->touch = (func_t) BagTouch;
+	item->touch = (func_t) PackTouch;
 	item->s.v.nextthink = g_globalvars.time + 10;
 	item->think = (func_t) SUB_Remove;
 
 	sound(item, CHAN_VOICE, "items/suit.wav", 1, ATTN_NORM);	// play respawn sound
 }
 
-void BagmanTimerThink()
+void PackmanTimerThink()
 { // Called every 1s
 	gedict_t *p;
-	int bagmanCount = 0;
-	gedict_t *bagp;
+	int packmanCount = 0;
+	gedict_t *packp;
 	
 	for (p = world; (p = find_plr(p));)
 	{
-		if (p->hasbag)
+		if (p->haspack)
 		{
-			bagmanCount++;
-			bagp = p;
+			packmanCount++;
+			packp = p;
 		}
 	}
 
-	if (bagmanCount > 1) // failsafe
+	if (packmanCount > 1) // failsafe
 	{
 		for (p = world; (p = find_plr(p));)
 		{
-			p->hasbag = false;
+			p->haspack = false;
 		}
-		bagmanCount = 0;
+		packmanCount = 0;
 	}
 
-	if (bagmanCount == 1)
+	if (packmanCount == 1)
 	{
 		if ((int)self->cnt2 % 5 == 0) // every fifth second.
 		{
 			// Add a frag, add 25% to their stack, play a sound, maybe make a flash?
-			bagp->s.v.frags += 1;
-			bagp->s.v.armorvalue += 25;
-			sound(bagp, CHAN_AUTO, "items/suit.wav", 1, ATTN_NORM);
+			packp->s.v.frags += 1;
+			packp->s.v.armorvalue += 25;
+			sound(packp, CHAN_AUTO, "items/suit.wav", 1, ATTN_NORM);
 			WriteByte( MSG_MULTICAST, SVC_TEMPENTITY);
 			WriteByte( MSG_MULTICAST, TE_LAVASPLASH);
-			WriteCoord( MSG_MULTICAST, bagp->s.v.origin[0]);
-			WriteCoord( MSG_MULTICAST, bagp->s.v.origin[1]);
-			WriteCoord( MSG_MULTICAST, bagp->s.v.origin[2]);
-			trap_multicast(PASSVEC3(bagp->s.v.origin), MULTICAST_PHS);
+			WriteCoord( MSG_MULTICAST, packp->s.v.origin[0]);
+			WriteCoord( MSG_MULTICAST, packp->s.v.origin[1]);
+			WriteCoord( MSG_MULTICAST, packp->s.v.origin[2]);
+			trap_multicast(PASSVEC3(packp->s.v.origin), MULTICAST_PHS);
 		}
 	}
 
-	if (bagmanCount == 0)
+	if (packmanCount == 0)
 		if ((int)self->cnt2 % 3 == 1) // every third second.  58, 55, 52, 49, ... 7, 4, 1
 		{
-			SpawnBag();
+			SpawnPack();
 		}
 
 }
@@ -777,8 +777,8 @@ void TimerThink()
 		return;
 	}
 
-	if (cvar("k_bagman")) 
-		BagmanTimerThink();
+	if (cvar("k_packman")) 
+		PackmanTimerThink();
 
 	if (k_sudden_death)
 	{
@@ -1659,8 +1659,8 @@ void PrintCountdown(int seconds)
 	if (cvar("k_smashmode"))
 	{
 		strlcat(text, va("%s %7s\n", "Smash", redtext("on")), sizeof(text));
-		if (cvar("k_bagman"))
-			strlcat(text, va("%s %6s\n", "Bagman", redtext("on")), sizeof(text));
+		if (cvar("k_packman"))
+			strlcat(text, va("%s %6s\n", "Packman", redtext("on")), sizeof(text));
 	}
 
 	if (isHoonyModeAny())

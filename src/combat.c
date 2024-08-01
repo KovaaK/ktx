@@ -306,10 +306,10 @@ void Killed(gedict_t *targ, gedict_t *attacker, gedict_t *inflictor)
 	self->s.v.takedamage = DAMAGE_NO;
 	self->touch = (func_t) SUB_Null;
 	self->s.v.effects = 0;
-	if (self->hasbag && g_globalvars.time - self->bag_pickup_time > 1)
+	if (self->haspack && g_globalvars.time - self->pack_pickup_time > 1)
 	{
-		self->hasbag = false;
-		G_cp2all("%s lost the bag!", self->netname);
+		self->haspack = false;
+		G_cp2all("%s lost the pack!", self->netname);
 	}
 
 	monster_death_use();
@@ -879,7 +879,7 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	{
 		if (targ->invincible_finished <= g_globalvars.time && (!streq(attacker->classname, "trigger_hurt")))
 		{
-			if (attacker == targ && targ->hasbag) // self damage to bagman
+			if (attacker == targ && targ->haspack) // self damage to packman
 				targ->s.v.armorvalue += native_damage * 0.25; // only do the armor add
 			
 			if (attacker != targ)

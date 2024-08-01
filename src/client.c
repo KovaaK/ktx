@@ -2488,7 +2488,7 @@ void SmashDoubleJump()
 {
 	vec3_t source, dest;
 	
-	if (cvar ("k_smashmode") && self->has_double_jump && ((int)(self->s.v.flags)) & FL_JUMPRELEASED && !(self->hasbag))
+	if (cvar ("k_smashmode") && self->has_double_jump && ((int)(self->s.v.flags)) & FL_JUMPRELEASED && !(self->haspack))
 	{
 		// Don't let the player use this to cancel upwards velocity
 		if (self->s.v.velocity[2] > 100)
@@ -4151,7 +4151,7 @@ void CheckLightEffects(void)
 		dim = true;
 	}
 
-	if (self->hasbag)
+	if (self->haspack)
 	{
 		g = true;
 	}
@@ -5091,13 +5091,13 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 
 		G_bprint(PRINT_MEDIUM, "%s%s%s%s%3.1f%s\n", victimname, deathstring, attackername, deathstring2, targ->s.v.armorvalue, deathstring3);
 
-		if (targ->hasbag && cvar("k_bagtokiller") && g_globalvars.time - targ->bag_pickup_time > 1)
+		if (targ->haspack && cvar("k_packtokiller") && g_globalvars.time - targ->pack_pickup_time > 1)
 		{
-			last_attacker->hasbag = true;
-			last_attacker->bag_pickup_time = g_globalvars.time;
+			last_attacker->haspack = true;
+			last_attacker->pack_pickup_time = g_globalvars.time;
 			last_attacker->s.v.armorvalue = max(0, last_attacker->s.v.armorvalue - 200);
-			targ->hasbag = false;
-			G_cp2all("%s now has the bag!", attackername);
+			targ->haspack = false;
+			G_cp2all("%s now has the pack!", attackername);
 		}
 
 		return;
@@ -5439,13 +5439,13 @@ void ClientObituary(gedict_t *targ, gedict_t *attacker)
 			if (dtTELE1 == targ->deathtype)
 			{
 				deathstring = " was telefragged by ";
-				if (targ->hasbag && cvar("k_bagtokiller") && g_globalvars.time - targ->bag_pickup_time > 1)
+				if (targ->haspack && cvar("k_packtokiller") && g_globalvars.time - targ->pack_pickup_time > 1)
 				{
-					attacker->hasbag = true;
-					attacker->bag_pickup_time = g_globalvars.time;
+					attacker->haspack = true;
+					attacker->pack_pickup_time = g_globalvars.time;
 					attacker->s.v.armorvalue = max(0, attacker->s.v.armorvalue - 200);
-					targ->hasbag = false;
-					G_cp2all("%s now has the bag!", attackername);
+					targ->haspack = false;
+					G_cp2all("%s now has the pack!", attackername);
 				}
 			}
 			else if (dtSQUISH == targ->deathtype)

@@ -2277,7 +2277,7 @@ void PutClientInServer(void)
 	self->wants_to_grab = !iKey(self, "disableautograb"); // reset state of grab according to player pref
 
 	// remove particular weapons in dmm4
-	if (deathmatch == 4 && match_in_progress == 2 && !cvar("k_smashmode"))
+	if (deathmatch == 4 && match_in_progress == 2) // && !cvar("k_smashmode"))
 	{
 		int k_disallow_weapons = (int)cvar("k_disallow_weapons") & DA_WPNS;
 

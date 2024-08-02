@@ -434,7 +434,7 @@ const char CD_NODESC[] = "no desc";
 #define CD_1ON1HM			"HoonyMode settings"
 #define CD_FFASM			"SmashMode ffa settings"
 #define CD_1ON1SM			"SmashMode 1on1 settings"
-#define CD_2ON2SM			"SmashMode 2on2 settings"
+#define CD_TDMSM			"SmashMode tdm settings"
 #define CD_FFASMBM			"SmashMode Packman ffa settings"
 #define CD_1ON1SMBM			"SmashMode Packman 1on1 settings"
 #define CD_TDMSMBM			"SmashMode Packman tdm settings"
@@ -820,7 +820,7 @@ cmd_t cmds[] =
 	{ "carena", 					DEF(UserMode), 					16, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_CARENA },
 	{ "smashmodeffa", 				DEF(UserMode), 					17, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_FFASM },
 	{ "smashmode1on1", 				DEF(UserMode), 					18, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_1ON1SM },
-	{ "smashmode2on2", 				DEF(UserMode), 					19, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_2ON2SM },
+	{ "smashmodetdm", 				DEF(UserMode), 					19, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_TDMSM },
 	{ "smashmodewipeout", 			DEF(UserMode), 					20, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_WIPEOUTSM },
 	{ "smashpackffa",				DEF(UserMode), 					21, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_FFASMBM },
 	{ "smashpacktdm",				DEF(UserMode), 					22, 		CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_TDMSMBM },
@@ -4281,7 +4281,7 @@ const char _1on1sm_um_init[] =      // SmashMode rules
 	"dp 0\n"						// drop pack
 ;
 
-const char _2on2sm_um_init[] =
+const char _tdmsm_um_init[] =
 	"coop 0\n"						// no coop
 	"maxclients 4\n"				// 
 	"k_maxclients 4\n"				// 
@@ -4630,11 +4630,11 @@ usermode um_list[] =
 	{ "ca", 		"Clan Arena", 			carena_um_init, 	UM_4ON4,	 0 },
 	{ "smashffa",	"SmashMode  FFA", 		_ffasm_um_init, 	UM_FFA, 	 0 },
 	{ "smash1on1",	"SmashMode 1on1", 		_1on1sm_um_init, 	UM_1ON1, 	 0 },
-	{ "smash2on2",	"SmashMode 2on2",		_2on2sm_um_init, 	UM_2ON2, 	 0 },
+	{ "smashtdm",	"SmashMode TDM",		_tdmsm_um_init, 	UM_2ON2, 	 0 },
 	{ "smashwipeout", 	"SmashMode Wipeout",_smwipeout_um_init, UM_4ON4, 	 0 },	
-	{ "smashbmffa",	"SmashMode Packman FFA", _ffasmbm_um_init, 	UM_FFA, 	 0 },
-	{ "smashbmtdm",	"SmashMode Packman TDM", _tdmsmbm_um_init, 	UM_4ON4, 	 0 },
-	{ "smashbm1on1","SmashMode Packman 1on1",_1on1smbm_um_init, UM_1ON1, 	 0 },
+	{ "smashpackffa",	"SmashMode Packman FFA", _ffasmbm_um_init, 	UM_FFA, 	 0 },
+	{ "smashpacktdm",	"SmashMode Packman TDM", _tdmsmbm_um_init, 	UM_4ON4, 	 0 },
+	{ "smashpack1on1",	"SmashMode Packman 1on1",_1on1smbm_um_init, UM_1ON1, 	 0 },
 };
 
 int um_cnt = sizeof(um_list) / sizeof(um_list[0]);

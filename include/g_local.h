@@ -75,14 +75,15 @@
 
 #define MOD_NAME				("KTX")
 #define MOD_FULLNAME			("KTX: Kombat Teams eXtreme")
-#define MOD_VERSION				("1.43-dev")
+#define MOD_VERSION				("KTX 1.43, with Quake Smash Mod changes by KovaaK")
 #define MOD_BUILD_DATE			(__DATE__ ", " __TIME__)
 #define MOD_SERVERINFO_MOD_KEY	("ktxver")
-#define MOD_URL					("https://github.com/QW-Group/ktx")
+#define MOD_URL					("https://github.com/kovaak/ktx")
 #define GIT_COMMIT				("")
 
 // keep lines to 38 chars max
-#define MOD_RELEASE_QUOTE		("This KTX version is dedicated to the\n2022 November QuakeWorld LAN Parties!\nRadomsko QW Lan, Poland, November 9-13\nQHLAN-22, Stockholm, November 17-20\n")
+#define MOD_RELEASE_QUOTE		("Welcome to Quake Smash Mod!\nAvailable game modes all start with:\n'smashpack' or 'smashmode' such as\nsmashpackffa, smashmodeffa\nsmashpack1on1, smashmode1on1\nsmashpacktdm, smashmodetdm\n\nMaps start with 'qsm'.  Type qsm\nand hit tab to see the list & vote\n")
+//#define MOD_RELEASE_QUOTE		("This KTX version is dedicated to the\n2022 November QuakeWorld LAN Parties!\nRadomsko QW Lan, Poland, November 9-13\nQHLAN-22, Stockholm, November 17-20\n")
 //#define MOD_RELEASE_HASHTAGS	("#COVID19 #StayHomeStaySafe #PlaySomeQW")
 
 // qqshka - hmm, seems in C this is macros

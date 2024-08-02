@@ -1,3 +1,54 @@
+# KTXSmash: a QuakeWorld server modification
+
+This is a QuakeWorld server mod meant to run with mvdsv that adds several game modes to KTX with smash style gameplay.  
+
+## Description ##
+
+In-game, your armor number is replaced with your current knockback %, and when you do damage to an opponent your UI health number shows your target's current knockback %.  
+Starting at 0% on spawn, you take very little knockback.  
+Quake damage numbers add 1/4th of the normal value (a direct rocket adds 110/4 = 27%, a single LG cell adds 7.5% and can stack 75%/s max DPS).  
+By 100% you take normal knockback, and by 200% you're taking double knockback.  
+LG Knockback is nerfed above certain percents so that Rocket Launcher gets to shine for most killing blows.  
+Axe is stupid strong, but good luck landing a hit.  
+
+The only way to die is to get knocked outside of the level or be telefragged.  
+When you get knocked off the level, use Quake air physics to redirect your momentum and try to recover.  
+Press jump in the air to double jump, and aim at a ledge to ledge-grab (then jump again to get back on the level).  
+
+## Game modes ##
+All of the new custom modes enable Smash style gameplay as above.  Hitting a teammate won't increase their percentage, but it will knock them back scaled by their %.
+
+Games with "packman" enabled will have a glowing green backpack that spawns.  Collecting it gives you 1 point every 5s, but it also damages you over time (25% every time it gives a point).  In team and duel modes the packman's killer receives the pack; in FFA or for team-kills the pack respawns randomly after the carrier dies.
+
+In prematch, the following commands can be entered to change the server's mode:
+* **smashmodeffa** - Smash Free-For-All, 10 fraglimit
+* **smashmode1on1** - Smash Duel, 10 fraglimit
+* **smashmodearena** - Winner stays rotating duels starting from 0%, 10 fraglimit
+* **smashmodetdm** - Smash Team Deathmatch, 5 minute timelimit
+* **smashmodewipeout** - Smash Wipeout, round-based (bo9) wherein you win a round by having all players on the enemy team dead at the same time, and each death increases your respawn timer.
+* **smashpackffa** - Packman Free-For-All, 10 minute timelimit or 50 fraglimit
+* **smashpack1on1** - Packman Duel, 10 minute timelimit or 50 fraglimit
+* **smashpacktdm** - Packman Team Deathmatch, 5 minute timelimit or 50 fraglimit
+
+## 9 maps included ##
+Originals: **qsm-ring, qsm-push**  
+Mods to existing maps: **qsm-aero, qsm-cata, qsm-dm2, qsm-dm3, qsm-dm4, qsm-dm6, qsm-pkeg**
+
+The only real requirement for playable maps is to have trigger_hurt boxes that do enough damage to kill the player when they are shoved into them.  We've found that making the surrounding killboxes far and wide play best.  If there is a ceiling killbox, try at least 900 units above the top floor.  Or be creative and you do you, I'd love to see more cool maps for this!
+
+## Credits ##
+KovaaK - smash mod idea, code (original mod made without KTX in 2004-2005)  
+Nick - packman idea, running servers  
+Mgli - maps  
+Ckap - hardest man to chase in packman, running servers  
+Toxic - packman double jump nerf idea, <3  
+Everyone who has played - thank you for your input, feedback, reactions, and everything.  It's been a joy experiencing Quake like this with you!  
+
+
+Original KTX README.md follows:
+
+
+
 # KTX: a QuakeWorld server modification
 ![KTX Logo](https://raw.githubusercontent.com/QW-Group/ktx/master/resources/logo/ktx.png)
 

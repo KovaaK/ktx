@@ -224,6 +224,7 @@ void ToggleSmashArena();
 void TogglePackToKiller();
 
 void Spawn666Time();
+void PackWarrantyTime();
 
 void noitems();
 
@@ -657,6 +658,7 @@ const char CD_NODESC[] = "no desc";
 #define CD_TEAMOVERLAY		"allow/disallow teamoverlay"
 
 #define CD_SPAWN666TIME		"set spawn pent time (dmm4 atm)"
+#define CD_PACKWARRANTYTIME	"set smashpack warranty time"
 
 #define CD_GIVEME			(CD_NODESC) // skip
 #define CD_DROPITEM			(CD_NODESC) // skip
@@ -1035,6 +1037,7 @@ cmd_t cmds[] =
 	{ "noitems", 					noitems, 						0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_NOITEMS },
 	{ "teamoverlay", 				teamoverlay, 					0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_TEAMOVERLAY },
 	{ "spawn666time", 				Spawn666Time, 					0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_SPAWN666TIME },
+	{ "packwarrantytime", 			PackWarrantyTime, 				0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_PACKWARRANTYTIME },
 	{ "giveme", 					giveme, 						0, 			CF_PLAYER | CF_MATCHLESS | CF_PARAMS, 									CD_GIVEME },
 	{ "dropitem", 					dropitem, 						0, 			CF_BOTH | CF_PARAMS, 													CD_DROPITEM },
 	{ "removeitem", 				removeitem, 					0, 			CF_BOTH | CF_PARAMS, 													CD_REMOVEITEM },
@@ -4198,6 +4201,7 @@ const char _ffasmbm_um_init[] =     // SmashMode Packman FFA rules
 	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_disallow_weapons 0\n"		// don't disallow any weapons
 	"k_packman 1\n"					//
+	"k_packwarranty 0\n"			//
 	"k_packtokiller 0\n"			//
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
@@ -4224,6 +4228,7 @@ const char _tdmsmbm_um_init[] =     // SmashMode Packman TDM rules
 	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_disallow_weapons 0\n"		// don't disallow any weapons
 	"k_packman 1\n"					//
+	"k_packwarranty 0\n"			//
 	"k_packtokiller 1\n"			//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
@@ -4250,6 +4255,7 @@ const char _1on1smbm_um_init[] =     // SmashMode Packman 1on1 rules
 	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_disallow_weapons 0\n"		// don't disallow any weapons
 	"k_packman 1\n"					//
+	"k_packwarranty 0\n"			//
 	"k_packtokiller 1\n"			//
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
@@ -8751,6 +8757,41 @@ void Spawn666Time()
 
 	// to actualy disable dmm4_invinc_time we need set it to negative value
 	trap_cvar_set_float("dmm4_invinc_time", dmm4_invinc_time ? dmm4_invinc_time : -1);
+}
+
+void PackWarrantyTime()
+{
+	char arg_2[1024];
+	float packwarranty_time;
+
+	if (cvar("k_packman") != 1)
+	{
+		G_sprint(self, 2, "command allowed in %s modes only\n", redtext("smashpack"));
+
+		return;
+	}
+
+	// no arguments, show info and return
+	if (match_in_progress || (trap_CmdArgc() == 1))
+	{
+		packwarranty_time = cvar("k_packwarranty");
+		packwarranty_time =
+				packwarranty_time ?
+						bound(0, packwarranty_time, 5) : 0;
+
+		G_sprint(self, 2, "%s is %.1fs\n", redtext("pack warranty time"), packwarranty_time);
+
+		return;
+	}
+
+	trap_CmdArgv(1, arg_2, sizeof(arg_2));
+
+	packwarranty_time = bound(0, atof(arg_2), 5);
+
+	G_bprint(2, "%s set %s to %.1fs\n", self->netname, redtext("pack warranty time"),
+				packwarranty_time);
+
+	trap_cvar_set_float("k_packwarranty", packwarranty_time);
 }
 
 void noitems()

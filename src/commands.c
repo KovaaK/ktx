@@ -4170,6 +4170,7 @@ const char _ffasm_um_init[] =      // SmashMode rules
 	"fraglimit 10\n"				// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
+	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_packman 0\n"					//
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
@@ -4193,8 +4194,9 @@ const char _ffasmbm_um_init[] =     // SmashMode Packman FFA rules
 	"fraglimit 50\n" 				// 
 	"timelimit 10\n"				// 
 	"k_smashmode 1\n"				//
+	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_packman 1\n"					//
-	"k_packtokiller 0\n"				//
+	"k_packtokiller 0\n"			//
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_overtime 0\n"				// 
@@ -4217,8 +4219,9 @@ const char _tdmsmbm_um_init[] =     // SmashMode Packman TDM rules
 	"fraglimit 50\n"				// 
 	"timelimit 5\n"					// 
 	"k_smashmode 1\n"				//
+	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_packman 1\n"					//
-	"k_packtokiller 1\n"				//
+	"k_packtokiller 1\n"			//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_disallow_weapons 0\n"		// don't disable GL
@@ -4241,8 +4244,9 @@ const char _1on1smbm_um_init[] =     // SmashMode Packman 1on1 rules
 	"fraglimit 50\n" 				// 
 	"timelimit 10\n"				// 
 	"k_smashmode 1\n"				//
+	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_packman 1\n"					//
-	"k_packtokiller 1\n"				//
+	"k_packtokiller 1\n"			//
 	"teamplay 0\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_overtime 0\n"				// 
@@ -4265,6 +4269,7 @@ const char _1on1sm_um_init[] =      // SmashMode rules
 	"fraglimit 10\n"				// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
+	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_packman 0\n"					//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
@@ -4288,6 +4293,7 @@ const char _tdmsm_um_init[] =
 	"fraglimit 0\n"					// 
 	"timelimit 5\n"					// 
 	"k_smashmode 1\n"				//
+	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_packman 0\n"					//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
@@ -4315,6 +4321,7 @@ const char _smwipeout_um_init[] =
 	"fraglimit 0\n"					// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
+	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags
 	"k_packman 0\n"					//
 	"teamplay 4\n"					// 
 	"deathmatch 4\n"				// 

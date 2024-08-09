@@ -8805,7 +8805,7 @@ void SmashDamageRatio()
 	char arg_2[1024];
 	float SmashDamageRatio;
 
-	if (cvar("smashmode") != 1)
+	if (cvar("k_smashmode") != 1)
 	{
 		G_sprint(self, 2, "command allowed in %s modes only\n", redtext("smash"));
 

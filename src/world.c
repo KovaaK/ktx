@@ -888,6 +888,8 @@ void FirstFrame()
 	RegisterCvarEx("k_packman", "0");
 	RegisterCvarEx("k_packtokiller", "0");
 	RegisterCvarEx("k_packwarranty", "0");
+	RegisterCvarEx("k_smashdmgratio", "8");
+	RegisterCvarEx("k_packselfdmgratio", "1");
 // }
 
 // { freshteams dmm1

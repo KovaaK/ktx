@@ -880,14 +880,14 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 		if (targ->invincible_finished <= g_globalvars.time && (!streq(attacker->classname, "trigger_hurt")))
 		{
 			if (attacker == targ && targ->haspack) // self damage to packman
-				targ->s.v.armorvalue += native_damage * 0.25; // only do the armor add
+				targ->s.v.armorvalue += native_damage / cvar("k_packselfdmgratio"); // only do the armor add
 			
 			if (attacker != targ)
 			{
 				if (!streq(targteam, attackerteam) || tp_num() == 0)
 				{ // opposite teams, add % and give credit for kills
 					hdp = GetHandicap(targ);
-					targ->s.v.armorvalue += native_damage * 0.25 / ((float)hdp / 100); //add to armor per original damage done
+					targ->s.v.armorvalue += native_damage / (cvar("k_smashdmgratio") * (float)hdp / 100); //add to armor per original damage done
 					if (attacker->s.v.health > 0) // if the attacker is still alive
 						attacker->s.v.health = targ->s.v.armorvalue; // set attacker's health to the target's armorvalue
 					targ->last_deathtype = targ->deathtype;

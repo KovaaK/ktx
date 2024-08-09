@@ -225,6 +225,8 @@ void TogglePackToKiller();
 
 void Spawn666Time();
 void PackWarrantyTime();
+void SmashDamageRatio();
+void PackSelfDamageRatio();
 
 void noitems();
 
@@ -659,6 +661,8 @@ const char CD_NODESC[] = "no desc";
 
 #define CD_SPAWN666TIME		"set spawn pent time (dmm4 atm)"
 #define CD_PACKWARRANTYTIME	"set smashpack warranty time"
+#define CD_SMASHDAMAGERATIO	"set smash pvp damage ratio"
+#define CD_PACKSELFDAMAGERATIO	"set smash pack self damage ratio"
 
 #define CD_GIVEME			(CD_NODESC) // skip
 #define CD_DROPITEM			(CD_NODESC) // skip
@@ -1038,6 +1042,8 @@ cmd_t cmds[] =
 	{ "teamoverlay", 				teamoverlay, 					0, 			CF_PLAYER | CF_SPC_ADMIN, 												CD_TEAMOVERLAY },
 	{ "spawn666time", 				Spawn666Time, 					0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_SPAWN666TIME },
 	{ "packwarrantytime", 			PackWarrantyTime, 				0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_PACKWARRANTYTIME },
+	{ "smashdmgratio", 				SmashDamageRatio, 				0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_SMASHDAMAGERATIO },
+	{ "packselfdmgratio", 			PackSelfDamageRatio, 			0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_PACKSELFDAMAGERATIO },
 	{ "giveme", 					giveme, 						0, 			CF_PLAYER | CF_MATCHLESS | CF_PARAMS, 									CD_GIVEME },
 	{ "dropitem", 					dropitem, 						0, 			CF_BOTH | CF_PARAMS, 													CD_DROPITEM },
 	{ "removeitem", 				removeitem, 					0, 			CF_BOTH | CF_PARAMS, 													CD_REMOVEITEM },
@@ -8792,6 +8798,76 @@ void PackWarrantyTime()
 				packwarranty_time);
 
 	trap_cvar_set_float("k_packwarranty", packwarranty_time);
+}
+
+void SmashDamageRatio()
+{
+	char arg_2[1024];
+	float SmashDamageRatio;
+
+	if (cvar("smashmode") != 1)
+	{
+		G_sprint(self, 2, "command allowed in %s modes only\n", redtext("smash"));
+
+		return;
+	}
+
+	// no arguments, show info and return
+	if (match_in_progress || (trap_CmdArgc() == 1))
+	{
+		SmashDamageRatio = cvar("k_smashdmgratio");
+		SmashDamageRatio =
+				SmashDamageRatio ?
+						bound(0, SmashDamageRatio, 20) : 0;
+
+		G_sprint(self, 2, "%s is %.1fs\n", redtext("Smash Damage Ratio"), SmashDamageRatio);
+
+		return;
+	}
+
+	trap_CmdArgv(1, arg_2, sizeof(arg_2));
+
+	SmashDamageRatio = bound(0, atof(arg_2), 20);
+
+	G_bprint(2, "%s set %s to %.1fs\n", self->netname, redtext("Smash Damage Ratio"),
+				SmashDamageRatio);
+
+	trap_cvar_set_float("k_smashdmgratio", SmashDamageRatio);
+}
+
+void PackSelfDamageRatio()
+{
+	char arg_2[1024];
+	float PackSelfDamageRatio;
+
+	if (cvar("k_packman") != 1)
+	{
+		G_sprint(self, 2, "command allowed in %s modes only\n", redtext("smashpack"));
+
+		return;
+	}
+
+	// no arguments, show info and return
+	if (match_in_progress || (trap_CmdArgc() == 1))
+	{
+		PackSelfDamageRatio = cvar("k_packselfdmgratio");
+		PackSelfDamageRatio =
+				PackSelfDamageRatio ?
+						bound(0, PackSelfDamageRatio, 20) : 0;
+
+		G_sprint(self, 2, "%s is %.1fs\n", redtext("Pack Self Damage Ratio"), PackSelfDamageRatio);
+
+		return;
+	}
+
+	trap_CmdArgv(1, arg_2, sizeof(arg_2));
+
+	PackSelfDamageRatio = bound(0, atof(arg_2), 20);
+
+	G_bprint(2, "%s set %s to %.1fs\n", self->netname, redtext("Pack Self Damage Ratio"),
+				PackSelfDamageRatio);
+
+	trap_cvar_set_float("k_packselfdmgratio", PackSelfDamageRatio);
 }
 
 void noitems()

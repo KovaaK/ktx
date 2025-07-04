@@ -4,7 +4,7 @@
 
 #include "g_local.h"
 
-void SP_info_intermission();
+void SP_info_intermission(void);
 
 #define MAX_TXTLEN	128
 #define TOP_FILE_VERSION 2
@@ -107,8 +107,8 @@ void race_remove_ent(void);
 void race_set_players_movetype_and_etc(void);
 void race_cleanmap(void);
 void unmute_all_players(void);
-void HideSpawnPoints();
-void ShowSpawnPoints();
+void HideSpawnPoints(void);
+void ShowSpawnPoints(void);
 void kill_race_idler(void);
 void write_topscores(void);
 void read_topscores(void);
@@ -271,9 +271,28 @@ void ToggleRace(void)
 	apply_race_settings();
 }
 
+void RaceCountdownChange(float t)
+{
+	float rcd = cvar("k_race_countdown") + t;
+
+	if (match_in_progress || !isRACE() || race_is_started())
+        {
+		return;
+	}
+
+	if ((rcd < 6) && (rcd > 0))
+	{
+		cvar_fset("k_race_countdown", (int)rcd);
+		G_bprint(2, "%s %s %s\n", redtext("Race countdown length set to"), dig3(rcd), redtext("seconds"));
+		return;
+	}
+	G_sprint(self, 2, "%s still %s\n", redtext("race countdown"), dig3(rcd - t));
+}
+
 // hard coded default settings for RACE
 static char race_settings[] =
 	"sv_silentrecord 1\n"
+	"sv_antilag 0\n"
 	"deathmatch 4\n"
 	"srv_practice_mode 1\n"
 	"lock_practice 1\n"
@@ -1137,7 +1156,7 @@ void race_dim_checkpoints(void)
 	}
 }
 
-void race_blink_think()
+void race_blink_think(void)
 {
 	// remove "cute" effects
 	self->s.v.effects = 0;
@@ -1188,7 +1207,7 @@ void race_VelocityForDamage(float scale, vec3_t dir, vec3_t v)
 	return;
 }
 
-void race_meat_touch()
+void race_meat_touch(void)
 {
 	// sound( self, CHAN_WEAPON, "zombie/z_miss.wav", 1, ATTN_NORM );	// bounce sound
 
@@ -1537,7 +1556,7 @@ static void race_over(void)
 	}
 }
 
-void race_node_touch()
+void race_node_touch(void)
 {
 	if (other->ct != ctPlayer)
 	{
@@ -2039,7 +2058,7 @@ static void race_start(qbool cancelrecord, const char *fmt, ...)
 	race.status = raceCD;
 
 	// set countdown timer
-	race.cd_cnt = 3;
+	race.cd_cnt = cvar("k_race_countdown");
 
 	race.cd_next_think = g_globalvars.time;
 
@@ -2821,7 +2840,7 @@ void r_Xset(float t)
 	race_route_now_custom();  // mark this is a custom route now
 }
 
-void r_cdel()
+void r_cdel(void)
 {
 	gedict_t *e;
 	int cnt, id;
@@ -3063,7 +3082,7 @@ void r_changestatus(float t)
 	}
 }
 
-void r_timeout()
+void r_timeout(void)
 {
 	char arg_1[64];
 
@@ -3118,7 +3137,7 @@ void race_download_record_demo(void)
 					race.records[record].demoname);
 }
 
-void display_record_details()
+void display_record_details(void)
 {
 	int record = read_record_param(1);
 
@@ -3152,7 +3171,7 @@ void display_record_details()
 				redtext(race_falsestart_mode(race.records[record].startmode)));
 }
 
-void r_falsestart()
+void r_falsestart(void)
 {
 	if (!race_command_checks())
 	{
@@ -3215,7 +3234,7 @@ void r_clear_route(void)
 	race_clear_pacemaker();
 }
 
-void r_mode()
+void r_mode(void)
 {
 	if (!race_command_checks())
 	{
@@ -3375,7 +3394,7 @@ void r_route(void)
 	race_clear_pacemaker();
 }
 
-void r_print()
+void r_print(void)
 {
 	if (!race_command_checks())
 	{
@@ -3528,6 +3547,7 @@ char* race_fgets(char *buf, int limit)
 	{
 		if ((*string++ = c) == '\n')
 		{
+			string--;
 			break;
 		}
 	}
@@ -3566,9 +3586,9 @@ void read_topscores(void)
 			race_fgets(line, MAX_TXTLEN);
 			race.records[cnt].time = atof(line);
 			race_fgets(line, MAX_TXTLEN);
-			strlcpy(race.records[cnt].racername, line, strlen(line));
+			strlcpy(race.records[cnt].racername, line, sizeof(race.records[cnt].racername));
 			race_fgets(line, MAX_TXTLEN);
-			strlcpy(race.records[cnt].demoname, line, strlen(line));
+			strlcpy(race.records[cnt].demoname, line, sizeof(race.records[cnt].demoname));
 			race_fgets(line, MAX_TXTLEN);
 			race.records[cnt].distance = atof(line);
 			race_fgets(line, MAX_TXTLEN);
@@ -3576,7 +3596,7 @@ void read_topscores(void)
 			race_fgets(line, MAX_TXTLEN);
 			race.records[cnt].avgspeed = atof(line);
 			race_fgets(line, MAX_TXTLEN);
-			strlcpy(race.records[cnt].date, line, strlen(line));
+			strlcpy(race.records[cnt].date, line, sizeof(race.records[cnt].date));
 			race_fgets(line, MAX_TXTLEN);
 			race.records[cnt].weaponmode = atoi(line);
 			race_fgets(line, MAX_TXTLEN);

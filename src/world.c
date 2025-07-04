@@ -29,21 +29,21 @@
 #endif
 
 void RegisterSkillVariables(void);
-void SUB_regen();
-void CheckAll();
-void FixSpecWizards();
-void FixSayFloodProtect();
-void FixRules();
-void ShowSpawnPoints();
-void r_route();
+void SUB_regen(void);
+void CheckAll(void);
+void FixSpecWizards(void);
+void FixSayFloodProtect(void);
+void FixRules(void);
+void ShowSpawnPoints(void);
+void r_route(void);
 void LoadMap(void);
-void SP_trigger_custom_push();
+void SP_trigger_custom_push(void);
 
 #define MAX_BODYQUE 4
 gedict_t *bodyque[MAX_BODYQUE];
 int bodyque_head;
 
-void InitBodyQue()
+void InitBodyQue(void)
 {
 	int i;
 
@@ -89,7 +89,7 @@ void CopyToBodyQue(gedict_t *ent)
 	}
 }
 
-void ClearBodyQue()
+void ClearBodyQue(void)
 {
 	int i;
 
@@ -104,7 +104,7 @@ void ClearBodyQue()
 	bodyque_head = 0;
 }
 
-void CheckDefMap()
+void CheckDefMap(void)
 {
 	int player_count = CountPlayers();
 	int bot_count = CountBots();
@@ -151,7 +151,7 @@ void Spawn_DefMapChecker(float timeout)
 
 float max_map_uptime = 3600 * 12; // 12 hours
 
-void Check_LongMapUptime()
+void Check_LongMapUptime(void)
 {
 	if (match_in_progress)
 	{
@@ -177,9 +177,9 @@ void Check_LongMapUptime()
 	changelevel(mapname);
 }
 
-void SP_item_artifact_super_damage();
+void SP_item_artifact_super_damage(void);
 
-void SP_worldspawn()
+void SP_worldspawn(void)
 {
 	char *s;
 
@@ -336,10 +336,7 @@ void SP_worldspawn()
 
 	trap_precache_sound("ambience/windfly.wav");
 
-	if (cvar("k_spm_custom_model"))
-	{
-		trap_precache_model("progs/spawn.mdl");
-	}
+	trap_precache_model(Spawn_GetModel());
 
 	trap_precache_model("progs/player.mdl");
 
@@ -569,8 +566,8 @@ void SP_worldspawn()
 	}
 }
 
-void ShowSpawnPoints();
-void Customize_Maps()
+void ShowSpawnPoints(void);
+void Customize_Maps(void)
 {
 	gedict_t *p;
 
@@ -758,7 +755,7 @@ qbool RegisterCvar(const char *var)
 }
 
 // in the first frame - even world is not spawned yet
-void FirstFrame()
+void FirstFrame(void)
 {
 	int i, um_idx;
 	qbool matchless_was_forced = false;
@@ -804,6 +801,12 @@ void FirstFrame()
 	RegisterCvar("k_lock_hdp");
 	RegisterCvar("k_disallow_weapons");
 	RegisterCvar("k_force_mapcycle"); // will use mapcycle even when /deathmatch 0
+	RegisterCvarEx("k_on_start_f_modified", "0");
+	RegisterCvarEx("k_on_start_f_ruleset", "0");
+	RegisterCvarEx("k_on_start_f_version", "0");
+	RegisterCvarEx("k_on_end_f_modified", "0");
+	RegisterCvarEx("k_on_end_f_ruleset", "0");
+	RegisterCvarEx("k_on_end_f_version", "0");
 
 	RegisterCvar("k_pow");
 	RegisterCvarEx("k_pow_q", "1"); // quad
@@ -821,6 +824,7 @@ void FirstFrame()
 	RegisterCvar("k_vp_admin");   // votes percentage for admin election
 	RegisterCvar("k_vp_captain"); // votes percentage for captain election
 	RegisterCvar("k_vp_coach");   // votes percentage for coachs election
+	RegisterCvarEx("k_vp_suggestcolor", "51"); // votes percentage for color suggestion election
 	RegisterCvar("k_vp_map");     // votes percentage for map change voting
 	RegisterCvar("k_vp_pickup");  // votes percentage for pickup voting
 	RegisterCvar("k_vp_rpickup"); // votes percentage for rpickup voting
@@ -853,9 +857,12 @@ void FirstFrame()
 	RegisterCvar("k_lockmin");
 	RegisterCvar("k_lockmax");
 	RegisterCvar("k_spectalk");
+	RegisterCvarEx("k_allowklist", "1");
+	RegisterCvarEx("k_allowtracklist", "1");
 	RegisterCvarEx("k_keepspectalkindemos", "0");
 	RegisterCvar("k_sayteam_to_spec");
 	RegisterCvar("k_dis");
+	RegisterCvar("k_drp");
 	RegisterCvar("dq");
 	RegisterCvar("dr");
 	RegisterCvar("dp");
@@ -875,6 +882,7 @@ void FirstFrame()
 	RegisterCvarEx("k_spm_show", "1");
 	RegisterCvarEx("k_spm_glow", "0");
 	RegisterCvarEx("k_spm_custom_model", "0");
+	RegisterCvarEx("k_spm_color_rgba", "1.0 1.0 1.0 1.0");
 	RegisterCvar("k_entityfile");
 // { hoonymode
 	RegisterCvarEx("k_hoonymode", "0");
@@ -912,6 +920,7 @@ void FirstFrame()
 // }
 // { race
 	RegisterCvarEx("k_race", "0");
+	RegisterCvarEx("k_race_countdown", "2");
 	RegisterCvarEx("k_race_custom_models", "0");
 	RegisterCvarEx("k_race_autorecord", "1");
 	RegisterCvarEx("k_race_times_per_port", "0");
@@ -1015,6 +1024,8 @@ void FirstFrame()
 
 	RegisterCvar("k_teamoverlay"); // q3 like team overlay
 
+	RegisterCvar("k_allow_socd_warning"); // socd
+
 // { SP
 	RegisterCvarEx("k_monster_spawn_time", "20");
 // }
@@ -1059,6 +1070,10 @@ void FirstFrame()
 	RegisterCvarEx(FB_CVAR_DEBUG, "0");
 	RegisterCvarEx(FB_CVAR_ADMIN_ONLY, "0");
 	RegisterCvarEx(FB_CVAR_FREEZE_PREWAR, "0");
+	RegisterCvarEx(FB_CVAR_HEALTH, "100");
+	RegisterCvarEx(FB_CVAR_WEAPON, "2");
+	RegisterCvarEx(FB_CVAR_BREAK_ON_DEATH, "1");
+	RegisterCvarEx(FB_CVAR_QUAD_MULTIPLIER, "4");
 
 	for (i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -1074,6 +1089,7 @@ void FirstFrame()
 	RegisterCvar("k_no_scoreboard_ghosts");
 
 	RegisterCvar("k_lgcmode");
+	RegisterCvar("k_tot_mode");
 
 	// private games
 	RegisterCvarEx("k_privategame", "0");                 // whether it is currently on or off
@@ -1083,6 +1099,8 @@ void FirstFrame()
 	RegisterCvarEx("k_privategame_force_reconnect", "1"); // when voting for private game, kick unauthed players
 
 // below globals changed only here
+	
+
 
 	k_matchLess = cvar("k_matchless");
 	k_matchLess_idle_time =
@@ -1156,7 +1174,7 @@ void FirstFrame()
 }
 
 // items spawned, but probably not solid yet
-void SecondFrame()
+void SecondFrame(void)
 {
 	if (framecount != 2)
 	{
@@ -1170,7 +1188,7 @@ void SecondFrame()
 	HM_restore_spawns();
 }
 
-void CheckSvUnlock()
+void CheckSvUnlock(void)
 {
 	if (k_sv_locktime && (k_sv_locktime < g_globalvars.time))
 	{
@@ -1249,7 +1267,7 @@ void CheckAutoXonX(qbool use_time)
 }
 
 // called when switching to/from ctf mode.
-void FixCTFItems()
+void FixCTFItems(void)
 {
 	static gameType_t old_k_mode = 0;	// static
 	static int k_ctf_runes = 0;			// static
@@ -1296,7 +1314,7 @@ void FixCTFItems()
 	k_ctf_hook = cvar("k_ctf_hook");
 }
 
-void FixRA()
+void FixRA(void)
 {
 	static qbool old_k_rocketarena = false;	// static
 
@@ -1321,7 +1339,7 @@ void FixRA()
 	}
 }
 
-void FixRace()
+void FixRace(void)
 {
 	static qbool old_k_race = false;	// static
 
@@ -1347,7 +1365,7 @@ void FixRace()
 }
 
 // serve k_pow and k_pow_min_players
-void FixPowerups()
+void FixPowerups(void)
 {
 	static int k_pow = -1; // static
 	static int k_pow_q = -1; // static
@@ -1416,7 +1434,7 @@ void FixPowerups()
 	}
 }
 
-void FixCmdFloodProtect()
+void FixCmdFloodProtect(void)
 {
 	k_cmd_fp_count = bound(0, cvar("k_cmd_fp_count"), MAX_FP_CMDS);
 	k_cmd_fp_count = (k_cmd_fp_count ? k_cmd_fp_count : min(10, MAX_FP_CMDS));
@@ -1430,7 +1448,7 @@ void FixCmdFloodProtect()
 	k_cmd_fp_disabled = bound(0, cvar("k_cmd_fp_disabled"), 1);
 }
 
-void FixSayTeamToSpecs()
+void FixSayTeamToSpecs(void)
 {
 	int k_sayteam_to_spec = bound(0, cvar("k_sayteam_to_spec"), 3);
 	int current_value = cvar("sv_sayteam_to_spec");
@@ -1538,9 +1556,9 @@ void SetMode4ServerInfo(void)
 int skip_fixrules = 0;
 
 // check if server is misconfigured somehow, made some minimum fixage
-void FixRules()
+void FixRules(void)
 {
-	extern void FixYawnMode();
+	extern void FixYawnMode(void);
 
 	gameType_t km = k_mode = cvar("k_mode");
 	int k_tt = bound(0, cvar("k_timetop"), 600);
@@ -1814,11 +1832,12 @@ int timelimit, fraglimit, teamplay, deathmatch, framecount, coop, skill;
 
 extern float intermission_exittime;
 
-void CheckTiming();
-void check_fcheck();
-void CheckTeamStatus();
-void SendSpecInfo();
+void CheckTiming(void);
+void check_fcheck(void);
+void CheckTeamStatus(void);
+void SendSpecInfo(void);
 void DoMVDAutoTrack(void);
+void antilag_updateworld(void);
 
 void FixNoSpecs(void);
 
@@ -1896,8 +1915,6 @@ void StartFrame(int time)
 
 	CheckTeamStatus();
 
-	SendSpecInfo();
-
 	CheckAutoXonX(true); // switch XonX mode dependant on players + specs count
 
 	Check_LongMapUptime(); // reload map after some long up time, so our float time variables are happy
@@ -1905,6 +1922,11 @@ void StartFrame(int time)
 	check_fcheck();
 
 	TeamplayGameTick();
+	
+	WillPause();
+	
+	time_corrected = time;
+	antilag_updateworld();
 }
 
 // Check the same spawnflags as items only visible in DM for monsters as well.

@@ -91,10 +91,24 @@ int calc_respawn_time(gedict_t *p, int offset)
 	qbool isWipeout = (cvar("k_clan_arena") == 2);
 	int max_deaths = cvar("k_clan_arena_max_respawns");
 	int time = 999;
+	int teamsize = 0;
+	int multiple;
+	gedict_t *p2;
+
+	// count players on team
+	for (p2 = world; (p2 = find_plr_same_team(p2, getteam(p)));)
+	{
+		teamsize++;
+	}
+
+	multiple = bound(3, teamsize+1, 6);	// first respawn won't take more than 6 seconds regardless of team size
 
 	if (isWipeout && (p->round_deaths+offset <= max_deaths))
 	{
-		time = p->round_deaths+offset == 1 ? 5 : (p->round_deaths-1+offset) * 10;
+		// if 4 players on team, the spawn times are 5, 10, 20, 30
+		// if 3 players on team, the spawn times are 4, 8, 16, 24
+		// if 2 players on team, the spawn times are 3, 6, 12, 18
+		time = p->round_deaths+offset == 1 ? multiple : (p->round_deaths-1+offset) * (multiple*2);
 	}
 
 	return time;
@@ -138,6 +152,11 @@ float last_alive_time(gedict_t *player)
 
 	else if (time == 0)
 	{
+		if (player->last_alive_active && player->in_play)
+		{
+			player->escape_time = g_globalvars.time; // start timer for escape time
+		}
+
 		player->last_alive_active = false;
 	}
 
@@ -223,7 +242,7 @@ int CA_wins_required(void)
 	return ((k_clan_arena_rounds + 1) / 2);
 }
 
-qbool isCA()
+qbool isCA(void)
 {
 	return (isTeam() && cvar("k_clan_arena"));
 }
@@ -274,6 +293,8 @@ void CA_MatchBreak(void)
 		{
 			k_respawn(p, false);
 		}
+
+		p->ca_ready = 0;	// this needs to be reset
 	}
 }
 
@@ -401,7 +422,7 @@ void enable_player_tracking(gedict_t *e, int follow)
 		}
 
 		G_sprint(e, 2, "tracking %s\n", redtext("disabled"));
-		sprintf(e->cptext, "%s", "");
+		snprintf(e->cptext, sizeof(e->cptext), "%s", "");
 		G_centerprint(e, "%s", e->cptext);
 
 		e->tracking_enabled = 0;
@@ -500,6 +521,10 @@ void CA_PutClientInServer(void)
 		// must reset this to 0 or spectated player from 
 		// previous round will be invisible
 		self->hideentity = 0;
+
+		// reset escape time and last_alive every spawn
+		self->escape_time = 0;
+		self->last_alive_active = false;
 
 		// default to spawning with rl
 		self->s.v.weapon = IT_ROCKET_LAUNCHER;
@@ -651,6 +676,7 @@ void CA_SendTeamInfo(gedict_t *t)
 	int kills;
 	int deaths;
 	int max_deaths;
+	int track_target;
 	gedict_t *p, *s;
 	char *tm, *nick;
 
@@ -740,10 +766,38 @@ void CA_SendTeamInfo(gedict_t *t)
 		
 		kills = bound(0, (int)p->round_kills, 999);
 		deaths = bound(0, (int)p->round_deaths, 999);
+		track_target = p->track_target ? NUM_FOR_EDICT(p->track_target) : -1;
 
-		stuffcmd(t, "//cainfo %d %d %d %d %d %d %d \"%s\" %d %d %d %d %d %d %d %d %d\n", cl,
+		stuffcmd(t, "//cainfo %d %d %d %d %d %d %d \"%s\" %d %d %d %d %d %d %d %d %d %d\n", cl,
 						origin0, origin1, origin2, h, a, items, nick, shells, nails, rockets, cells, 
-						camode, deadtype, timetospawn, kills, deaths);
+						camode, deadtype, timetospawn, kills, deaths, track_target);
+	}
+}
+
+// wipeout: check if dying player survived just long enough for teammate to spawn
+void CA_check_escape(gedict_t *targ, gedict_t *attacker)
+{
+	float escape_time = g_globalvars.time - targ->escape_time;
+	gedict_t *p;
+
+	if (escape_time > 0 && escape_time < 0.3)
+	{
+		for (p = world; (p = find_plr_same_team(p, getteam(targ)));)
+		{
+			stuffcmd(p, "play ca/hero.wav\n");
+		}
+
+		for (p = world; (p = find_plr_same_team(p, getteam(attacker)));)
+		{
+			stuffcmd(p, "play boss2/idle.wav\n");
+		}
+
+		// Player is rewarded with an extra life.
+		// Escaping a wipe on the first life results in instant respawn.
+		// That's cool, but could be written cleaner in calc_respawn_time(). 
+		targ->round_deaths--;
+
+		G_bprint(2, "%s survives by &cff0%.3f&r seconds!\n", targ->netname, escape_time);
 	}
 }
 
@@ -751,6 +805,12 @@ void CA_ClientObituary(gedict_t *targ, gedict_t *attacker)
 {
 	attacker->round_kills++;
 	
+	if (cvar("k_clan_arena") == 2)	// Wipeout only
+	{
+		// check if targ was a lone survivor waiting for teammate to spawn
+		CA_check_escape(targ, attacker);
+	}
+
 	// int ah, aa;
 
 	// if (!isCA())
@@ -954,15 +1014,15 @@ void CA_OnePlayerStats(gedict_t *p, qbool series_over)
 		round_elg = 100 * (h_lg - p->ca_round_lghit) / max(1, a_lg - p->ca_round_lgfired);
 	}
 
-	sprintf(score, "%.0f", use_totals ? p->s.v.frags : p->s.v.frags - p->ca_round_frags);
-	sprintf(damage, "%.0f", use_totals ? dmg_g : dmg_g - p->ca_round_dmg);
-	sprintf(dmg_took, "%.0f", use_totals ? dmg_t : dmg_t - p->ca_round_dmgt);
-	sprintf(kills, "%.0f", use_totals ? rkills : rkills - p->ca_round_kills);
-	sprintf(deaths, "%.0f", use_totals ? p->deaths : p->deaths - p->ca_round_deaths);
-	sprintf(gl_hits, "%.0f", use_totals ? vh_gl : vh_gl - p->ca_round_glhit);
-	sprintf(rl_hits, "%.0f", use_totals ? vh_rl : vh_rl - p->ca_round_rlhit);
-	sprintf(rl_directs, "%.0f", use_totals ? h_rl : h_rl - p->ca_round_rldirect);
-	sprintf(lg_eff, "%.0f", use_totals ? e_lg : round_elg);
+	snprintf(score, sizeof(score), "%.0f", use_totals ? p->s.v.frags : p->s.v.frags - p->ca_round_frags);
+	snprintf(damage, sizeof(damage), "%.0f", use_totals ? dmg_g : dmg_g - p->ca_round_dmg);
+	snprintf(dmg_took, sizeof(dmg_took), "%.0f", use_totals ? dmg_t : dmg_t - p->ca_round_dmgt);
+	snprintf(kills, sizeof(kills), "%.0f", use_totals ? rkills : rkills - p->ca_round_kills);
+	snprintf(deaths, sizeof(deaths), "%.0f", use_totals ? p->deaths : p->deaths - p->ca_round_deaths);
+	snprintf(gl_hits, sizeof(gl_hits), "%.0f", use_totals ? vh_gl : vh_gl - p->ca_round_glhit);
+	snprintf(rl_hits, sizeof(rl_hits), "%.0f", use_totals ? vh_rl : vh_rl - p->ca_round_rlhit);
+	snprintf(rl_directs, sizeof(rl_directs), "%.0f", use_totals ? h_rl : h_rl - p->ca_round_rldirect);
+	snprintf(lg_eff, sizeof(lg_eff), "%.0f", use_totals ? e_lg : round_elg);
 
 	G_bprint(2, "%3s %5s %4s %2s %2s %3s %3s %3s %3s%s %s\n",
 		strneq(score,      "0") ? score        : "-",
@@ -1039,8 +1099,9 @@ void EndRound(int alive_team)
 			}
 			else
 			{
-				sprintf(round_or_series, "%s", ((alive_team == 1 && team1_score == (CA_wins_required()-1)) || 
-					(alive_team == 2 && team2_score == (CA_wins_required()-1))) ? "series" : "round");
+				snprintf(round_or_series, sizeof(round_or_series),
+						 "%s", ((alive_team == 1 && team1_score == (CA_wins_required()-1)) ||
+						 (alive_team == 2 && team2_score == (CA_wins_required()-1))) ? "series" : "round");
 
 				if ((loser_respawn_time < 2) && (loser_respawn_time > 0))
 				{
@@ -1138,14 +1199,14 @@ void show_tracking_info(gedict_t *p)
 	{
 		if (p->in_limbo)
 		{
-			sprintf(p->cptext, "\n\n\n\n\n\n%s\n\n\n%d\n\n\n seconds to respawn\n", 
+			snprintf(p->cptext, sizeof(p->cptext), "\n\n\n\n\n\n%s\n\n\n%d\n\n\n seconds to respawn\n",
 								redtext(p->track_target->netname), (int)ceil(p->seconds_to_respawn));
 
 			G_centerprint(p, "%s", p->cptext);
 		}
 		else
 		{
-			sprintf(p->cptext, "\n\n\n\n\n\n%s\n\n\n\n\n\n\n", 
+			snprintf(p->cptext, sizeof(p->cptext), "\n\n\n\n\n\n%s\n\n\n\n\n\n\n",
 								redtext(p->track_target->netname));
 
 			G_centerprint(p, "%s", p->cptext);
@@ -1190,15 +1251,11 @@ void CA_player_pre_think(void)
 	{
 		CA_show_greeting(self);
 		
-		// Set this player to solid so we trigger checkpoints & teleports during move
-		self->s.v.solid = (ISDEAD(self) ? SOLID_NOT : SOLID_SLIDEBOX);
-		
 		if ((self->s.v.mins[0] == 0) || (self->s.v.mins[1] == 0))
 		{
 			// This can happen if the world 'squashes' a SOLID_NOT entity, mvdsv will turn into corpse
 			setsize(self, PASSVEC3(VEC_HULL_MIN), PASSVEC3(VEC_HULL_MAX));
 		}
-
 		setorigin(self, PASSVEC3(self->s.v.origin));
 
 		if ((self->ct == ctPlayer) && (ISDEAD(self) || !self->in_play))
@@ -1231,9 +1288,8 @@ void CA_player_pre_think(void)
 			self->alive_time = g_globalvars.time - self->time_of_respawn;
 		}
 
-		// take no damage to health/armor withing 1 second of respawn
-		// or during endround
-		if (((self->alive_time >= 1) || !self->round_deaths) && !ca_round_pause)
+		// take no damage to health/armor within 1 second of respawn or during endround
+		if (self->in_play && ((self->alive_time >= 1) || !self->round_deaths) && !ca_round_pause)
 		{
 			self->no_pain = false;
 		}
@@ -1318,8 +1374,8 @@ void CA_Frame(void)
 	{
 		int last_alive;
 		int e_last_alive;
-		char str_last_alive[5];
-		char str_e_last_alive[5];
+		char str_last_alive[25];
+		char str_e_last_alive[25];
 
 		for (p = world; (p = find_plr(p));)
 		{
@@ -1339,7 +1395,7 @@ void CA_Frame(void)
 				if (p->seconds_to_respawn <= 0)
 				{
 					p->spawn_delay = 0;
-					sprintf(p->cptext, "%s\n", "FIGHT!");
+					snprintf(p->cptext, sizeof(p->cptext), "%s\n", "FIGHT!");
 					G_centerprint(p, "%s", p->cptext);
 					k_respawn(p, true);
 
@@ -1350,30 +1406,42 @@ void CA_Frame(void)
 				{
 					if (!p->tracking_enabled)
 					{
-						sprintf(p->cptext, "\n\n\n\n\n\n\n\n\n%d\n\n\n seconds to respawn\n", (int)ceil(p->seconds_to_respawn));
+						snprintf(p->cptext, sizeof(p->cptext), "\n\n\n\n\n\n\n\n\n%d\n\n\n seconds to respawn\n",
+								 (int)ceil(p->seconds_to_respawn));
 						G_centerprint(p, "%s", p->cptext);
 					}
 				}
 			}
+			// both you and the enemy are the last alive on your team
+			else if (p->in_play && p->alive_time > 2 && last_alive && e_last_alive)
+			{
+				snprintf(str_last_alive, sizeof(str_last_alive), "%d", last_alive);
+				snprintf(p->cptext, sizeof(p->cptext), "\n\n\n\n\n\n%s\n\n\n%s\n\n\n\n",
+								redtext("1 on 1"), last_alive == 999 ? " " : redtext(str_last_alive));
+
+				G_centerprint(p, "%s", p->cptext);
+			}
+			// you're the last alive on your team versus two or more enemies... hide!
 			else if (p->in_play && p->alive_time > 2 && last_alive)
 			{
-				sprintf(str_last_alive, "%d", last_alive);
-				sprintf(p->cptext, "\n\n\n\n\n\n%s\n\n\n%s\n\n\n\n", 
+				snprintf(str_last_alive, sizeof(str_last_alive), "%d", last_alive);
+				snprintf(p->cptext, sizeof(p->cptext), "\n\n\n\n\n\n%s\n\n\n%s\n\n\n\n",
 								redtext("stay alive!"), last_alive == 999 ? " " : redtext(str_last_alive));
 
 				G_centerprint(p, "%s", p->cptext);
 			}
+			// only one enemy remains... find him!
 			else if (p->in_play && p->alive_time > 2 && e_last_alive)
 			{
-				sprintf(str_e_last_alive, "%d", e_last_alive);
-				sprintf(p->cptext, "\n\n\n\n\n\n%s\n\n\n%s\n\n\n\n", 
+				snprintf(str_e_last_alive, sizeof(str_e_last_alive), "%d", e_last_alive);
+				snprintf(p->cptext, sizeof(p->cptext), "\n\n\n\n\n\n%s\n\n\n%s\n\n\n\n",
 								"one enemy left", e_last_alive == 999 ? " " : str_e_last_alive);
 
 				G_centerprint(p, "%s", p->cptext);
 			}
 			else if (p->in_play && p->alive_time > 2)
 			{
-				sprintf(p->cptext, " ");
+				snprintf(p->cptext, sizeof(p->cptext), " ");
 				G_centerprint(p, "%s", p->cptext);
 			}
 		}
@@ -1444,7 +1512,7 @@ void CA_Frame(void)
 				}
 
 				G_sprint(p, 2, "round \x90%d\x91 starts in 5 seconds.\n", round_num);
-				sprintf(p->cptext, " "); // reset any server print from last round
+				snprintf(p->cptext, sizeof(p->cptext), " "); // reset any server print from last round
 			}
 		}
 

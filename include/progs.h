@@ -39,11 +39,11 @@ typedef struct shared_edict_s
 } edict_t;
 
 struct gedict_s;
-typedef void (*th_die_funcref_t)();
+typedef void (*th_die_funcref_t)(void);
 typedef void (*th_pain_funcref_t)(struct gedict_s*, float);
 
 // { SP
-typedef void (*th_sp_funcref_t)();
+typedef void (*th_sp_funcref_t)(void);
 // }
 
 typedef enum
@@ -95,6 +95,12 @@ typedef struct wpType_s
 
 	int edamage;		// damage to enemies
 	int tdamage;		// damage to team-mates
+
+	int enemyjustkilled;
+	int lastfraghits;			// count of hits for lg per frag
+	int lastfragattacks;		// count of attacks for lg per frag
+	int lastfragdisplayhits;	// stores count of last frag hits
+	int lastfragdisplayattacks;	// stores count of last frag attacks
 
 	float time;			// total time u have some weapon
 } wpType_t;
@@ -212,7 +218,8 @@ typedef enum
 	etNone = 0,
 	etCaptain,
 	etCoach,
-	etAdmin
+	etAdmin,
+	etSuggestColor
 } electType_t;
 
 // store player votes here
@@ -229,6 +236,7 @@ typedef struct vote_s
 	int hooksmooth;
 	int hookfast;
 	int hookclassic;
+	int hookcrhook;
 	int antilag;
 	int privategame;
 	//int kick_unauthed;
@@ -521,6 +529,7 @@ typedef struct fb_botskill_s {
 	fb_botaim_t aim_params[2];
 
 	float movement;
+	qbool use_rocketjumps;
 	float combat_jump_chance;
 	float missile_dodge_time;				// minimum time in seconds before bot dodges missile
 
@@ -565,7 +574,7 @@ typedef struct fb_entvars_s {
 
 	int oldsolid;								// need to keep track of this for hazard calculations
 
-	// these determine the desire for items for each player 
+	// these determine the desire for items for each player
 	//   (not just for bots ... bot's desire can take enemy's desire into consideration)
 	fb_desire_funcref_t desire;
 	float desire_armor1;
@@ -601,7 +610,7 @@ typedef struct fb_entvars_s {
 
 	qbool fl_marker;							// true if the current item is considered a marker (used when finding all objects in given radius)
 	//struct gedict_s* next;
-	
+
 	// Goal evaluation
 	struct gedict_s* best_goal;
 	float best_goal_score;
@@ -652,6 +661,7 @@ typedef struct fb_entvars_s {
 	qbool firing;								// does the bot want to attack this frame?
 	qbool jumping;								// does the bot want to jump this frame?
 	int desired_weapon_impulse;					// impulse to send the next time the player
+	int random_desired_weapon_impulse;
 	vec3_t desired_angle;						// for 'perfect' aim, this is where the bot wants to be aiming
 	qbool botchose;								// next_impulse is valid
 	int next_impulse;							// the impulse to send in next command
@@ -754,6 +764,32 @@ typedef struct fb_entvars_s {
 } fb_entvars_t;
 #endif
 
+#define ANTILAG_REWIND_MAXHITSCAN	 0.250
+#define ANTILAG_REWIND_MAXPROJECTILE 0.080
+#define ANTILAG_TIMESTEP 0.01
+//#define ANTILAG_XERP 0
+#define ANTILAG_MAX_PREDICTION 0.02
+#define ANTILAG_MAX_XERP 0.02
+#define ANTILAG_MAXSTATES 40
+#define ANTILAG_MAXEDICTS 256
+struct gedict_s;
+typedef struct antilag_s {
+	vec3_t		rewind_origin[ANTILAG_MAXSTATES];
+	vec3_t		rewind_velocity[ANTILAG_MAXSTATES];
+	vec3_t		rewind_platform_offset[ANTILAG_MAXSTATES];
+	int			rewind_platform_edict[ANTILAG_MAXSTATES];
+	float		rewind_time[ANTILAG_MAXSTATES];
+	int			rewind_seek;
+
+	vec3_t		held_origin;
+	vec3_t		held_velocity;
+
+	struct gedict_s *owner;
+
+	struct antilag_s *prev;
+	struct antilag_s *next;
+} antilag_t;
+
 //typedef (void(*)(gedict_t *)) one_edict_func;
 typedef struct gedict_s
 {
@@ -821,7 +857,7 @@ typedef struct gedict_s
 //
 	float cnt;								// misc flag
 
-	void (*think1)();						//calcmove
+	void (*think1)(void);						//calcmove
 	vec3_t finaldest;
 //combat
 	float dmg;
@@ -942,6 +978,21 @@ typedef struct gedict_s
 	float fHighestFrameTime;
 	float fIllegalFPSWarnings;
 // ILLEGALFPS]
+
+	qbool leavemealone;						// if player doesn't want to be shot by other players during pre war
+
+// SOCD detectioin
+	float fStrafeChangeCount;
+	float fFramePerfectStrafeChangeCount;
+	int   socdDetected;
+	int   socdChecksCount;
+	float fLastSideMoveSpeed;
+	int   matchStrafeChangeCount;
+	int   matchPerfectStrafeCount;
+	int   totalStrafeChangeCount;
+	int   totalPerfectStrafeCount;
+	int   nullStrafeCount;
+// SOCD
 
 	float shownick_time;					// used to force centerprint is off at desired time
 	clientType_t ct;						// client type for client edicts
@@ -1069,6 +1120,7 @@ typedef struct gedict_s
 	float alive_time;						// number of seconds player is in play
 	float time_of_respawn;					// server time player respawned or round started
 	float seconds_to_respawn;				// number of seconds until respawn
+	float escape_time;						// number of seconds after "escaping"
 	char *teamcolor;						// color of player's team
 	char cptext[100];						// centerprint for player
 	int ca_ammo_grenades;					// grenade ammo
@@ -1187,9 +1239,10 @@ typedef struct gedict_s
 	int lgc_distance_hits[LGCMODE_DISTANCE_BUCKETS];
 // }
 
-// { 
+// {
 	// let mvdsv know when player has teleported, and adjust for high-ping
-	int teleported;
+	int          teleported;
+	float		 teleport_time;
 // }
 
 // {
@@ -1199,6 +1252,49 @@ typedef struct gedict_s
 
 // {
 	qbool spawn_effect_queued;
+// }
+
+// { antilag
+	struct antilag_s *antilag_data;
+	float client_time;
+	float client_lastupdated;
+	float client_nextthink;
+	func_t client_think;
+	float client_thinkindex;
+	float client_ping;
+	float client_predflags;
+	struct gedict_s *weapon_pred;
+// }
+
+// { hiprot fields
+	int rotate_type;                        // internal, rotate(0), movewall(1), setorigin(2), see hiprot.c
+	vec3_t neworigin;                       // internal, origin tracking
+	vec3_t rotate;                          // rotation angle
+	vec3_t finalangle;                      // normalized version of 'angles'
+	float endtime;                          // internal, animation tracking
+	float duration;                         // internal, animation tracking
+	string_t group;                         // linking of rotating brushes
+	string_t path;                          // from ent field 'target', as 'path' to mirror original source
+	string_t event;                         // events that may happen at path corners
+// }
+
+// { func_bob
+	float distance;                         // distance between vantage points
+	float waitmin;                          // speed-up factor, >0, see func_bob.c for defaults
+	float waitmin2;                         // slowdown factor, >0, see func_bob.c for defaults
+// }
+
+// { ambient_general
+	float volume;                           // attenuation, see misc.c for defaults
+// }
+
+// { trigger_heal
+	float healmax;                          // maximum health see triggers.c for defaults
+	float healtimer;                        // internal timer for tracking health replenishment interval
+// }
+
+// { csqc
+	func_t SendEntity;
 // }
 
 // { smashmode

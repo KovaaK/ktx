@@ -44,12 +44,16 @@ int NUM_FOR_EDICT(gedict_t *e)
 	return b;
 }
 
-float g_random()
-{
-	return ((rand() & 0x7fff) / ((float)0x8000));
+void g_random_seed(int seed) {
+	rng_seed_global(seed);
 }
 
-float crandom()
+float g_random(void)
+{
+	return (rng_next_global() >> 8 & 0xffffff) / 16777216.0f;
+}
+
+float crandom(void)
 {
 	return (2 * (g_random() - 0.5));
 }
@@ -123,12 +127,12 @@ void initialise_spawned_ent(gedict_t *ent)
 #endif
 }
 
-float next_frame()
+float next_frame(void)
 {
 	return g_globalvars.time + g_globalvars.frametime;
 }
 
-gedict_t* spawn()
+gedict_t* spawn(void)
 {
 	gedict_t *t = &g_edicts[trap_spawn()];
 
@@ -928,7 +932,7 @@ void sound(gedict_t *ed, int channel, char *samp, float vol, float att)
 	trap_sound(NUM_FOR_EDICT(ed), channel, samp, vol, att);
 }
 
-gedict_t* checkclient()
+gedict_t* checkclient(void)
 {
 	return &g_edicts[trap_checkclient()];
 }
@@ -1026,6 +1030,13 @@ void WriteShort(int to, int data)
 void WriteLong(int to, int data)
 {
 	trap_WriteLong(to, data);
+}
+
+void WriteFloat(int to, float data)
+{
+	int send_data;
+	memcpy(&send_data, &data, sizeof(send_data));
+	trap_WriteLong(to, send_data);
 }
 
 void WriteString(int to, char *data)
@@ -1232,7 +1243,7 @@ char* getname(gedict_t *ed)
 // return "his" or "her" depend on gender of player
 char* g_his(gedict_t *ed)
 {
-	static char string[MAX_STRINGS][5];
+	static char string[MAX_STRINGS][8];
 	static int index = 0;
 	char *sex = "his";
 
@@ -1243,6 +1254,10 @@ char* g_his(gedict_t *ed)
 	if (streq(ezinfokey(ed, "gender"), "f"))
 	{
 		sex = "her";
+	}
+	else if (streq(ezinfokey(ed, "gender"), "n"))
+	{
+		sex = "their";
 	}
 
 	string[index][0] = 0;
@@ -1266,6 +1281,10 @@ char* g_he(gedict_t *ed)
 	{
 		sex = "she";
 	}
+	else if (streq(ezinfokey(ed, "gender"), "n"))
+	{
+		sex = "they";
+	}
 
 	string[index][0] = 0;
 	strlcat(string[index], sex, sizeof(string[0]));
@@ -1276,7 +1295,7 @@ char* g_he(gedict_t *ed)
 // return "himself" or "herself" depend on gender of player
 char* g_himself(gedict_t *ed)
 {
-	static char string[MAX_STRINGS][9];
+	static char string[MAX_STRINGS][10];
 	static int index = 0;
 	char *sex = "himself";
 
@@ -1287,6 +1306,10 @@ char* g_himself(gedict_t *ed)
 	if (streq(ezinfokey(ed, "gender"), "f"))
 	{
 		sex = "herself";
+	}
+	else if (streq(ezinfokey(ed, "gender"), "n"))
+	{
+		sex = "themself";
 	}
 
 	string[index][0] = 0;
@@ -1569,27 +1592,27 @@ qbool isghost(gedict_t *ed)
 	return (streq(ed->classname, "ghost") ? true : false);
 }
 // gametype >>>
-qbool isDuel()
+qbool isDuel(void)
 {
 	return ((k_mode == gtDuel) ? true : false);
 }
 
-qbool isTeam()
+qbool isTeam(void)
 {
 	return ((k_mode == gtTeam) ? true : false);
 }
 
-int tp_num()
+int tp_num(void)
 {
 	return ((isTeam() || isCTF() || coop) ? teamplay : 0);
 }
 
-qbool isFFA()
+qbool isFFA(void)
 {
 	return ((k_mode == gtFFA) ? true : false);
 }
 
-qbool isCTF()
+qbool isCTF(void)
 {
 #ifdef CTF_RELOADMAP
 	return k_ctf; // once setup at map load
@@ -1598,7 +1621,7 @@ qbool isCTF()
 #endif
 }
 
-qbool isUnknown()
+qbool isUnknown(void)
 {
 #ifdef CTF_RELOADMAP
 	if (cvar("k_mode") == gtCTF)
@@ -1773,7 +1796,7 @@ char* Get_PowerupsStr(void)
 	return str;
 }
 
-int Get_Powerups()
+int Get_Powerups(void)
 {
 	static float k_pow_check = 0;
 	static int k_pow = 0;
@@ -1850,6 +1873,17 @@ char* OnOff(float f)
 	return (f ? "on" : "off");
 }
 
+char* AntilagModeString(float f)
+{
+	char *new_antilag_string = "'0 - disabled'";
+	if (f == 1)
+		new_antilag_string = "'1 - KTX'";
+	else if (f == 2)
+		new_antilag_string = "'2 - MVDSV'";
+
+	return new_antilag_string;
+}
+
 // { some scores stuff
 
 // for team games
@@ -1861,7 +1895,7 @@ int k_scores3 = 0;
 gedict_t *ed_scores1 = NULL;
 gedict_t *ed_scores2 = NULL;
 
-void ReScores()
+void ReScores(void)
 {
 	gedict_t *p;
 	int from;
@@ -1950,35 +1984,35 @@ void ReScores()
 	}
 }
 
-int get_scores1()
+int get_scores1(void)
 {
 	ReScores();
 
 	return k_scores1;
 }
 
-int get_scores2()
+int get_scores2(void)
 {
 	ReScores();
 
 	return k_scores2;
 }
 
-int get_scores3()
+int get_scores3(void)
 {
 	ReScores();
 
 	return k_scores3;
 }
 
-gedict_t* get_ed_scores1()
+gedict_t* get_ed_scores1(void)
 {
 	ReScores();
 
 	return ed_scores1;
 }
 
-gedict_t* get_ed_scores2()
+gedict_t* get_ed_scores2(void)
 {
 	ReScores();
 
@@ -1993,7 +2027,7 @@ gedict_t *ed_best1 = NULL;
 gedict_t *ed_best2 = NULL;
 gedict_t *ed_bestPow = NULL;
 
-void CalculateBestPlayers()
+void CalculateBestPlayers(void)
 {
 	gedict_t *p;
 	int best, best1, best2;
@@ -2069,7 +2103,7 @@ void CalculateBestPlayers()
 	}
 }
 
-void CalculateBestPowPlayers()
+void CalculateBestPowPlayers(void)
 {
 	gedict_t *p;
 	int best, best1;
@@ -2106,7 +2140,9 @@ void CalculateBestPowPlayers()
 		best += (p->invincible_finished >= g_globalvars.time) ? 4000 : 0; // pent
 		best += (p->super_damage_finished >= g_globalvars.time) ? 2000 : 0; // quad
 		best += (p->invisible_finished >= g_globalvars.time) ? 1000 : 0; // ring
-		best += (p->radsuit_finished >= g_globalvars.time) ? 500 : 0; // suit
+		// Disabled biosuit to trigger autotrack, as recent gameplays of new 2024 maps with
+		// biosuit showed that this is unwanted
+//		best += (p->radsuit_finished >= g_globalvars.time) ? 500 : 0; // suit
 		best += p->s.v.frags;
 
 		if (!ed_bestPow || best1 < best)
@@ -2118,21 +2154,21 @@ void CalculateBestPowPlayers()
 	}
 }
 
-gedict_t* get_ed_best1()
+gedict_t* get_ed_best1(void)
 {
 	CalculateBestPlayers();
 
 	return ed_best1;
 }
 
-gedict_t* get_ed_best2()
+gedict_t* get_ed_best2(void)
 {
 	CalculateBestPlayers();
 
 	return ed_best2;
 }
 
-gedict_t* get_ed_bestPow()
+gedict_t* get_ed_bestPow(void)
 {
 	CalculateBestPowPlayers();
 
@@ -2348,7 +2384,7 @@ void ghost2scores(gedict_t *g)
 	WriteShort(to, 39);  				// client ping
 }
 
-void update_ghosts()
+void update_ghosts(void)
 {
 	gedict_t *p;
 	int from;
@@ -2363,7 +2399,7 @@ void update_ghosts()
 
 // { events
 
-void on_connect()
+void on_connect(void)
 {
 	char *newteam;
 
@@ -2409,7 +2445,7 @@ void on_connect()
 	}
 }
 
-void on_enter()
+void on_enter(void)
 {
 	if (iKey(self, "kf") & KF_ON_ENTER) // client doesn't want on_enter
 	{
@@ -2570,7 +2606,7 @@ void cl_refresh_plus_scores(gedict_t *p)
 	}
 }
 
-void refresh_plus_scores()
+void refresh_plus_scores(void)
 {
 	gedict_t *p;
 
@@ -2633,7 +2669,7 @@ char* params_str(int from, int to)
 	return string[index++];
 }
 
-char* SD_type_str()
+char* SD_type_str(void)
 {
 	switch ((int)k_sudden_death)
 	{
@@ -2655,13 +2691,11 @@ char* respawn_model_name(int mdl_num)
 {
 	switch (mdl_num)
 	{
-// K_SPW_0_NONRANDOM changes "Normal QW respawns" to "pre-qtest nonrandom respawns"
-#ifdef K_SPW_0_NONRANDOM
-		case 0:
+		case -1:
 			return "pre-qtest nonrandom respawns";
-#else
-		case 0:  return "Normal QW respawns";
-#endif
+
+		case 0:
+			return "Normal QW respawns";
 
 		case 1:
 			return "KT SpawnSafety";
@@ -2684,6 +2718,9 @@ char* respawn_model_name_short(int mdl_num)
 {
 	switch (mdl_num)
 	{
+		case -1:
+			return "QTEST";
+
 		case 0:
 			return "QW";
 
@@ -2704,13 +2741,13 @@ char* respawn_model_name_short(int mdl_num)
 	}
 }
 
-int get_fair_pack()
+int get_fair_pack(void)
 {
 	// Yawnmode: always 2 aka last weapon
 	return bound(0, k_yawnmode ? 2 : cvar("k_frp"), 2);
 }
 
-int get_fallbunny()
+int get_fallbunny(void)
 {
 	// Yawnmode/race: no broken ankle
 	return (k_yawnmode || isRACE() ? 1 : cvar("k_fallbunny"));

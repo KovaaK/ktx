@@ -1,0 +1,8 @@
+../build/csprogs.dat
+#define CSQC
+fteextensions.qc
+
+
+weaponpred.qc
+main.qc
+

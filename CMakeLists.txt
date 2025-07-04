@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.9.0)
 # Set project name and languge.
 project(qwprogs C)
 
+include(CheckCCompilerFlag)
+
+set(CMAKE_COLOR_DIAGNOSTICS ON)
+
 # CMake option for bot support, we check it below and add C preprocessor directive if required.
 option(BOT_SUPPORT "Build with bot support" ON)
 # Option for FTE extensions. We also have some basic support for FTE which does not controlled by this setting.
@@ -29,6 +33,7 @@ set(SRC_NATIVE
 set(SRC_COMMON
 	"${DIR_SRC}/g_main.c" # WARNING: should be first in list for QVM, since it contains vmMain().
 	"${DIR_SRC}/admin.c"
+	"${DIR_SRC}/antilag.c"
 	"${DIR_SRC}/arena.c"
 	"${DIR_SRC}/bot_aim.c"
 	"${DIR_SRC}/bot_blocked.c"
@@ -64,6 +69,8 @@ set(SRC_COMMON
 	"${DIR_SRC}/doors.c"
 	"${DIR_SRC}/fb_globals.c"
 	"${DIR_SRC}/files.c"
+	"${DIR_SRC}/func_bob.c"
+	"${DIR_SRC}/func_laser.c"
 	"${DIR_SRC}/g_cmd.c"
 	"${DIR_SRC}/globals.c"
 	"${DIR_SRC}/g_mem.c"
@@ -71,6 +78,8 @@ set(SRC_COMMON
 	"${DIR_SRC}/g_spawn.c"
 	"${DIR_SRC}/g_userinfo.c"
 	"${DIR_SRC}/g_utils.c"
+	"${DIR_SRC}/g_syscalls_extra.c"
+	"${DIR_SRC}/hiprot.c"
 	"${DIR_SRC}/hoonymode.c"
 	"${DIR_SRC}/items.c"
 	"${DIR_SRC}/logs.c"
@@ -90,6 +99,9 @@ set(SRC_COMMON
 	"${DIR_SRC}/player.c"
 	"${DIR_SRC}/q_shared.c"
 	"${DIR_SRC}/race.c"
+	"${DIR_SRC}/rng.c"
+	"${DIR_SRC}/rng_gen_impl.c"
+	"${DIR_SRC}/rng_seed_impl.c"
 	"${DIR_SRC}/route_calc.c"
 	"${DIR_SRC}/route_fields.c"
 	"${DIR_SRC}/route_lookup.c"
@@ -142,17 +154,45 @@ if(FTESV)
 endif()
 # If not Miscrosoft compilator - then set additional options for linker.
 if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-	target_compile_options(${PROJECT_NAME} PRIVATE /W4)
+	# 4100 - unused parameter
+	# 4210 - using extern keyword in functions
+	# 4456 - shadowing locals, broadly used
+	# 4459 - shadowing globals, broadly used
+	target_compile_options(${PROJECT_NAME} PRIVATE /W4 /wd4100 /wd4210 /wd4456 /wd4459)
 else()
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall)
-	target_link_options(${PROJECT_NAME} PRIVATE "-Wl,--no-undefined") # Do not allow undefined symbols while linking.
+
+	check_c_compiler_flag("-Wstrict-prototypes" HAS_CFLAG_STRICT_PROTOTYPES)
+	if (HAS_CFLAG_STRICT_PROTOTYPES)
+		target_compile_options(${PROJECT_NAME} PRIVATE -Werror=strict-prototypes)
+	endif()
+
+	check_c_compiler_flag("-Wstrlcpy-strlcat-size" HAS_STRLCPY_STRLCAT_SIZE)
+	if (HAS_STRLCPY_STRLCAT_SIZE)
+		target_compile_options(${PROJECT_NAME} PRIVATE -Werror=strlcpy-strlcat-size)
+	endif()
+
+	# Do not allow undefined symbols while linking.
+	if(APPLE)
+		target_link_options(${PROJECT_NAME} PRIVATE "-Wl,-undefined,error")
+	else()
+		target_link_options(${PROJECT_NAME} PRIVATE "-Wl,--no-undefined")
+	endif()
 	target_link_libraries(${PROJECT_NAME} PRIVATE m) # Link with libm.
 endif()
 
 
-# Build QVM tools.
-# EXCLUDE_FROM_ALL tells to not build tools if they does not required, for example if you build native library only.
-add_subdirectory(tools/q3asm EXCLUDE_FROM_ALL)
+# Build QVM tools if needed.
+find_program(Q3ASM q3asm)
+if(Q3ASM)
+	message(STATUS "q3asm found at ${Q3ASM}")
+	set(QVM_LINKER "${Q3ASM}")
+else()
+	message(STATUS "q3asm not found, compiling bundled q3asm.")
+	# EXCLUDE_FROM_ALL tells to not build tools if they does not required, for example if you build native library only.
+	add_subdirectory(tools/q3asm EXCLUDE_FROM_ALL)
+	set(QVM_LINKER "q3asm")
+endif()
 
 # Set up vars for QVM library.
 set(VM_DIR "vm")
@@ -160,12 +200,11 @@ add_custom_target(vmdir
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${VM_DIR}
 	)
 set(QVM_COMPILER "q3lcc")
-set(QVM_LINKER "q3asm")
 set(QVM_C_FLAGS -DQ3_VM -S -Wf-target=bytecode -Wf-g)
 if(BOT_SUPPORT)
 	set(QVM_C_FLAGS ${QVM_C_FLAGS} -DBOT_SUPPORT=1)
 endif()
-set(QVM_INCFLAGS -I${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(QVM_INCDIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # Write first chunk of QVM_LIST_FILE.
 set(QVM_LIST_FILE "${CMAKE_CURRENT_BINARY_DIR}/game.q3asm")
@@ -177,9 +216,11 @@ foreach(file ${SRC_COMMON} ${SRC_VM})
 	string(CONCAT file_asm ${file_asm} ".asm") # Add asm extension.
 	list(APPEND SRC_ASM ${file_asm}) # Fill in SRC_ASM list. 
 	file(APPEND ${QVM_LIST_FILE} "${VM_DIR}/${file_asm}\n") # Continue generate QVM_LIST_FILE.
+	get_filename_component(src_dir ${file} DIRECTORY)
+	file(RELATIVE_PATH QVM_RELINCDIR "${CMAKE_CURRENT_SOURCE_DIR}/${src_dir}" "${QVM_INCDIR}")
 	# Add command to compile c to asm.
 	add_custom_target(${file_asm}
-		COMMAND ${QVM_COMPILER} ${QVM_C_FLAGS} ${QVM_INCFLAGS} "${CMAKE_CURRENT_SOURCE_DIR}/${file}" -o "${VM_DIR}/${file_asm}"
+		COMMAND ${QVM_COMPILER} ${QVM_C_FLAGS} -I${QVM_RELINCDIR} "${CMAKE_CURRENT_SOURCE_DIR}/${file}" -o "${VM_DIR}/${file_asm}"
 		DEPENDS vmdir
 		SOURCES ${file}
 	)

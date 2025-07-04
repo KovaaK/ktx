@@ -233,6 +233,7 @@ qbool CanDamage(gedict_t *targ, gedict_t *inflictor)
 	return false;
 }
 
+
 /*
  ============
  Killed
@@ -253,6 +254,14 @@ void Killed(gedict_t *targ, gedict_t *attacker, gedict_t *inflictor)
 
 	oself = self;
 	self = targ;
+
+	if (self->antilag_data != NULL)
+	{
+		if (time_corrected >= self->teleport_time)
+		{
+			antilag_unmove_specific(self);
+		}
+	}
 
 	if (self->s.v.health < -99)
 	{
@@ -455,6 +464,13 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	float playerheight = 0, midheight = 0;
 	qbool midair = false, inwater = false, do_dmg = false, rl_dmg = false, stomp_dmg = false;
 
+	// used by buttons and triggers to set activator for target firing
+	damage_attacker = attacker;
+	damage_inflictor = inflictor;
+
+	attackerteam = getteam(attacker);
+	targteam = getteam(targ);
+
 	// can't apply damage to dead
 	if (!targ->s.v.takedamage || ISDEAD(targ))
 	{
@@ -465,6 +481,21 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 		else
 		{
 			return;
+		}
+	}
+
+	// don't bounce around players in prewar who wish to be left alone
+	if (match_in_progress != 2 && targ->leavemealone)
+	{
+		if (attacker != targ && ((targ->ct == ctPlayer) && (attacker->ct == ctPlayer)))
+		{
+			return;
+		}
+		else if (dtTELE1 == targ->deathtype	// always do tele damage
+				|| dtTELE2 == targ->deathtype	// always do tele damage
+				|| dtTELE3 == targ->deathtype)	// always do tele damage
+		{
+			// telefrags still work, to avoid getting stuck
 		}
 	}
 
@@ -506,19 +537,25 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 			}
 		}
 		
-		// don't accept any damage in CA modes if no_pain is true (ie during respawn in wipeout)
-		if (targ->no_pain)
-		{
-			tp4teamdmg = true; // don't take damage but still get stopped/bounced by weapon fire
+		// don't accept any damage in CA modes if no_pain is true 
+		if ((targ->no_pain || (attacker->no_pain && attacker->in_play)) && (match_in_progress == 2))
+		{	
+			if (attacker == targ)
+			{
+				tp4teamdmg = true; // don't take damage but still get stopped/bounced by weapon fire
+			}
+			else 
+			{
+				if (targ->in_play && (targ->invincible_sound < g_globalvars.time) && strneq(targteam, attackerteam))
+				{
+					sound(targ, CHAN_AUTO, "items/protect3.wav", 0.75, ATTN_NORM);
+					targ->invincible_sound = g_globalvars.time + 2;
+				}
+	
+				return;
+			}
 		}
 	}
-
-	// used by buttons and triggers to set activator for target firing
-	damage_attacker = attacker;
-	damage_inflictor = inflictor;
-
-	attackerteam = getteam(attacker);
-	targteam = getteam(targ);
 
 	if ((int)cvar("k_midair"))
 	{
@@ -536,7 +573,9 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	if ((attacker->super_damage_finished > g_globalvars.time) && strneq(inflictor->classname, "door")
 			&& (dtSTOMP != targ->deathtype) && !midair)
 	{
-		damage *= (deathmatch == 4 ? 8 : 4); // in dmm4 quad is octa actually
+		// in dmm4 quad is octa actually, unless tot_mode_enabled(),
+		// then it's possible to set custom multiplier
+		damage *= (deathmatch != 4 ? 4 : tot_mode_enabled() ? FrogbotQuadMultiplier() : 8);
 	}
 
 	// ctf strength rune
@@ -908,6 +947,7 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	
 	// figure momentum add
 	if ((inflictor != world)
+			&& (targ->teleport_time < time_corrected || targ == attacker)
 			&& ((targ->s.v.movetype == MOVETYPE_WALK)
 					|| (k_bloodfest && ((int)targ->s.v.flags & FL_MONSTER))))
 	{
@@ -1300,6 +1340,24 @@ void T_RadiusDamage(gedict_t *inflictor, gedict_t *attacker, float damage, gedic
 	while (head)
 	{
 		if (head != ignore)
+		{
+			T_RadiusDamageApply(inflictor, attacker, head, damage, dtype);
+		}
+
+		head = trap_findradius(head, inflictor->s.v.origin, damage + 40);
+	}
+}
+
+void T_RadiusDamage_Ignore2(gedict_t *inflictor, gedict_t *attacker, float damage, gedict_t *ignore, gedict_t *ignore2,
+	deathType_t dtype)
+{
+
+	gedict_t *head;
+	head = trap_findradius(world, inflictor->s.v.origin, damage + 40);
+
+	while (head)
+	{
+		if (head != ignore && head != ignore2)
 		{
 			T_RadiusDamageApply(inflictor, attacker, head, damage, dtype);
 		}

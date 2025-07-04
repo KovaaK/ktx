@@ -12,7 +12,7 @@
 
 #include "g_local.h"
 
-void DemoMark();
+void DemoMark(void);
 
 #define FB_LAVAJUMP_NOT    0      // not lava-jumping
 #define FB_LAVAJUMP_SINK   1      // deliberately sinking, waiting for waterlevel == 3
@@ -93,6 +93,10 @@ void BotCanRocketJump(gedict_t *self)
 	if (self->fb.debug_path)
 	{
 		self->fb.canRocketJump = self->fb.debug_path_rj;
+	}
+	else if (!self->fb.skill.use_rocketjumps)
+	{
+		self->fb.canRocketJump = false;
 	}
 	else if (has_rl && (self->s.v.waterlevel > 1)
 			&& (trap_pointcontents(self->s.v.origin[0], self->s.v.origin[1], self->s.v.origin[2])
@@ -341,7 +345,7 @@ void BotPerformRocketJump(gedict_t *self)
 		// Going at reasonable pace
 		qbool ok_vel = VectorLength(self->s.v.velocity) > sv_maxspeed * 0.9;
 		// Fire will trigger (technically we could jump anyway if framedelay enabled, but leave for now)
-		qbool ok_to_fire = !self->s.v.button0 && self->attack_finished < g_globalvars.time;
+		qbool ok_to_fire = !self->s.v.button0 && self->attack_finished < self->client_time;
 
 		// FIXME: TODO: Also used to check they wouldn't kill teammate, but think that should be fuzzy logic
 		qbool can_start_rj = ok_to_rj && path_is_rj && ok_distance && ok_direction && ok_to_fire

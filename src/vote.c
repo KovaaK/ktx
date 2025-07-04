@@ -20,13 +20,40 @@
 // vote.c: election functions by rc\sturm
 #include "g_local.h"
 
+#define MAX_PLAYERCOUNT_RPICKUP 32
+
+// These are the built-in teams for rpickup to choose from
+// rpickupTeams_t builtinTeamInfo[] =
+// {
+// 	{"Bone", "10",  "0", "color 10 0\nskin \"\"\nteam Bone\n"},
+// 	{"Teal", "11", "11", "color 11 11\nskin \"\"\nteam Teal\n"},
+// 	{"Pink",  "6",  "6", "color 6 6\nskin \"\"\nteam Pink\n"},
+// 	{"Gold",  "5", "12", "color 5 12\nskin \"\"\nteam Gold\n"},
+// 	{"Plum",  "8",  "8", "color 8 8\nskin \"\"\nteam Plum\n"},
+// 	{"Wine",  "4",  "4", "color 4 4\nskin \"\"\nteam Wine\n"},
+// 	{"Beer",  "0",  "1", "color 0 1\nskin \"\"\nteam Beer\n"},
+// 	{"Weed",  "3",  "3", "color 3 3\nskin \"\"\nteam Weed\n"}
+// };
+
+// Let's just continue to use red/blue for now
+rpickupTeams_t builtinTeamInfo[] =
+{
+	{"red",  "4",  "4", "color 4 4\nskin \"\"\nteam red\n"},
+	{"blue",  "13",  "13", "color 13 13\nskin \"\"\nteam blue\n"},
+	{"yell",  "12",  "12", "color 12 12\nskin \"\"\nteam yell\n"}
+};
+
+// Color suggestion
+suggestcolor_t suggestcolor;
+void SuggestColorApply(void);
+
 //void BeginPicking();
 void BecomeCaptain(gedict_t *p);
 void BecomeCoach(gedict_t *p);
 
 // AbortElect is used to terminate the voting
 // Important if player to be elected disconnects or levelchange happens
-void AbortElect()
+void AbortElect(void)
 {
 	gedict_t *p;
 
@@ -58,7 +85,7 @@ void AbortElect()
 	}
 }
 
-void ElectThink()
+void ElectThink(void)
 {
 	G_bprint(2, "The voting has timed out.\n"
 				"Election aborted\n");
@@ -67,7 +94,7 @@ void ElectThink()
 	AbortElect();
 }
 
-void VoteYes()
+void VoteYes(void)
 {
 	int votes;
 
@@ -104,7 +131,7 @@ void VoteYes()
 	vote_check_elect();
 }
 
-void VoteNo()
+void VoteNo(void)
 {
 	int votes;
 
@@ -213,6 +240,11 @@ int get_votes_req(int fofs, qbool diff)
 				percent = cvar("k_vp_coach");
 				break;
 			}
+			else if (el_type == etSuggestColor)
+			{
+				percent = cvar("k_vp_suggestcolor");
+				break;
+			}
 			else
 			{
 				percent = 100;
@@ -317,7 +349,7 @@ int get_votes_req(int fofs, qbool diff)
 		vt_req = max(2, vt_req); // at least 2 votes in this case
 	}
 
-	if ((CountBots() > 0) && ((CountPlayers() - CountBots()) == 1) && (fofs != OV_PRIVATE))
+	if ((CountBots() > 0) && ((CountPlayers() - CountBots()) == 1) && (fofs != OV_PRIVATE) && (fofs != OV_ELECT))
 	{
 		vt_req = 1;
 	}
@@ -362,7 +394,7 @@ qbool is_elected(gedict_t *p, electType_t et)
 	return (p->v.elect_type == et);
 }
 
-int get_elect_type()
+int get_elect_type(void)
 {
 	gedict_t *p;
 
@@ -382,12 +414,17 @@ int get_elect_type()
 		{
 			return etCoach;
 		}
+
+		if (is_elected(p, etSuggestColor))
+		{
+			return etSuggestColor;
+		}
 	}
 
 	return etNone;
 }
 
-char* get_elect_type_str()
+char* get_elect_type_str(void)
 {
 	switch (get_elect_type())
 	{
@@ -415,7 +452,7 @@ votemap_t maps_voted[MAX_CLIENTS];
 // return the index in maps_voted[] of most voted map
 // return -1 inf no votes at all or some failures
 // if admin votes for map - map will be treated as most voted
-int vote_get_maps()
+int vote_get_maps(void)
 {
 	int best_idx = -1, i;
 	gedict_t *p;
@@ -478,7 +515,7 @@ int vote_get_maps()
 	return (maps_voted_idx = best_idx);
 }
 
-void vote_check_map()
+void vote_check_map(void)
 {
 	int vt_req;
 	char *map;
@@ -510,7 +547,7 @@ void vote_check_map()
 	changelevel(map);
 }
 
-void vote_check_break()
+void vote_check_break(void)
 {
 	if (!match_in_progress || intermission_running || match_over)
 	{
@@ -532,7 +569,7 @@ void vote_check_break()
 	}
 }
 
-void vote_check_elect()
+void vote_check_elect(void)
 {
 	gedict_t *p;
 
@@ -578,12 +615,20 @@ void vote_check_elect()
 			}
 		}
 
+		if (!match_in_progress)
+		{
+			if (is_elected(p, etSuggestColor))
+			{
+				SuggestColorApply();
+			}
+		}
+
 		AbortElect();
 	}
 }
 
 // !!! do not confuse rpickup and pickup
-void vote_check_pickup()
+void vote_check_pickup(void)
 {
 	gedict_t *p;
 	int veto;
@@ -631,8 +676,8 @@ void vote_check_rpickup(int maxRecursion)
 	gedict_t *p;
 	int veto;
 	qbool needNewRpickup = true;
-	// buffer reserved for 20 players (10on10). If more present, recursive auto-rpickup will not be activated
-	int originalTeams[20];
+	// buffer reserved for 32 players (16on16). If more present, recursive auto-rpickup will not be activated
+	int originalTeams[MAX_PLAYERCOUNT_RPICKUP];
 
 	if (match_in_progress || k_captains || k_coaches)
 	{
@@ -656,13 +701,11 @@ void vote_check_rpickup(int maxRecursion)
 
 	if (veto || !get_votes_req(OV_RPICKUP, true))
 	{
-		vote_clear(OV_RPICKUP);
-
 		// Save the original teams, and also clear them
 		i = 0;
 		for (p = world; (p = find_plr(p));)
 		{
-			if (i < 20)
+			if (i < MAX_PLAYERCOUNT_RPICKUP)
 			{
 				originalTeams[i++] = p->k_teamnumber;
 			}
@@ -679,6 +722,7 @@ void vote_check_rpickup(int maxRecursion)
 			{
 				if (p->k_teamnumber)
 				{
+					// This is a player that we already handled
 					continue;
 				}
 
@@ -703,42 +747,39 @@ void vote_check_rpickup(int maxRecursion)
 					{
 						if (p->isBot)
 						{
-							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "team", "red", 0);
-							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "topcolor", "4", 0);
-							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "bottomcolor", "4", 0);
+							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "team", builtinTeamInfo[0].name, 0);
+							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "topcolor", builtinTeamInfo[0].topColor, 0);
+							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "bottomcolor", builtinTeamInfo[0].bottomColor, 0);
 						}
 						else
 						{
-							stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO,
-											"color  4\nskin \"\"\nteam red\n");
+							stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO, "%s", builtinTeamInfo[0].stuffCmd);
 						}
 					}
 					else if (p->k_teamnumber == 2)
 					{
 						if (p->isBot)
 						{
-							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "team", "blue", 0);
-							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "topcolor", "13", 0);
-							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "bottomcolor", "13", 0);
+							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "team", builtinTeamInfo[1].name, 0);
+							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "topcolor", builtinTeamInfo[1].topColor, 0);
+							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "bottomcolor", builtinTeamInfo[1].bottomColor, 0);
 						}
 						else
 						{
-							stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO,
-											"color 13\nskin \"\"\nteam blue\n");
+							stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO, "%s", builtinTeamInfo[1].stuffCmd);
 						}
 					}
 					else
 					{
 						if (p->isBot)
 						{
-							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "team", "yellow", 0);
-							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "topcolor", "12", 0);
-							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "bottomcolor", "12", 0);
+							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "team", builtinTeamInfo[2].name, 0);
+							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "topcolor", builtinTeamInfo[2].topColor, 0);
+							trap_SetBotUserInfo(NUM_FOR_EDICT(p), "bottomcolor", builtinTeamInfo[2].bottomColor, 0);
 						}
 						else
 						{
-							stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO,
-											"color 12\nskin \"\"\nteam yellow\n");
+							stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO, "%s", builtinTeamInfo[2].stuffCmd);
 						}
 					}
 
@@ -759,9 +800,9 @@ void vote_check_rpickup(int maxRecursion)
 		}
 
 		// check if rpickup really created new teams
-		if (pl_cnt <= 20)
+		if (pl_cnt <= MAX_PLAYERCOUNT_RPICKUP)
 		{
-			for (p = world, i = 0; (p = find_plr(p)) && i < 20 && needNewRpickup; i++)
+			for (p = world, i = 0; (p = find_plr(p)) && i < MAX_PLAYERCOUNT_RPICKUP && needNewRpickup; i++)
 			{
 				if (originalTeams[i] != p->k_teamnumber)
 				{
@@ -775,6 +816,11 @@ void vote_check_rpickup(int maxRecursion)
 				G_bprint(2, "console: Team layout did not change. %s again (tries left: %d)\n",
 							redtext("random pickup"), maxRecursion);
 				vote_check_rpickup(maxRecursion - 1);
+			}
+			else
+			{
+				// we have a new team layout, let's clear the rpickup flag
+				vote_clear(OV_RPICKUP);
 			}
 		}
 	}
@@ -792,7 +838,7 @@ void FixNoSpecs(void)
 	}
 }
 
-void vote_check_nospecs()
+void vote_check_nospecs(void)
 {
 	int veto;
 
@@ -858,7 +904,7 @@ void vote_check_nospecs()
 	}
 }
 
-void nospecs()
+void nospecs(void)
 {
 	int votes;
 
@@ -895,7 +941,7 @@ void nospecs()
 	vote_check_nospecs();
 }
 
-void vote_check_teamoverlay()
+void vote_check_teamoverlay(void)
 {
 	int veto;
 
@@ -932,7 +978,7 @@ void vote_check_teamoverlay()
 	}
 }
 
-void teamoverlay()
+void teamoverlay(void)
 {
 	int votes;
 
@@ -972,7 +1018,7 @@ void teamoverlay()
 qbool force_map_reset = false;
 
 // { votecoop
-void vote_check_coop()
+void vote_check_coop(void)
 {
 	int veto;
 
@@ -1024,7 +1070,7 @@ void vote_check_coop()
 	}
 }
 
-void votecoop()
+void votecoop(void)
 {
 	int votes;
 
@@ -1053,7 +1099,7 @@ void votecoop()
 // }
 
 // { votehook
-void hooksmooth()
+void hooksmooth(void)
 {
 	int votes, veto;
 
@@ -1096,7 +1142,7 @@ void hooksmooth()
 	}
 }
 
-void hookfast()
+void hookfast(void)
 {
 	int votes, veto;
 	
@@ -1140,7 +1186,7 @@ void hookfast()
 	}
 }
 
-void hookclassic()
+void hookclassic(void)
 {
 	int votes, veto;
 	
@@ -1184,11 +1230,55 @@ void hookclassic()
 	}
 }
 
+void hookcrhook(void)
+{
+	int votes, veto;
+
+	if (match_in_progress)
+	{
+		G_sprint(self, 2, "hook style can not be changed while match is in progress\n");
+
+		return;
+	}
+
+	if (!isCTF())
+	{
+		G_sprint(self, 2, "hook style can only be set in CTF mode\n");
+
+		return;
+	}
+	if (intermission_running || match_over)
+	{
+		return;
+	}
+
+	self->v.hookcrhook = !self->v.hookcrhook;
+
+	G_bprint(
+		2,
+		"%s %s!%s\n",
+		self->netname,
+		(self->v.hookcrhook ?
+			redtext("votes for crhook") :
+			redtext(va("withdraws %s hookstyle vote", g_his(self)))),
+		((votes = get_votes_req(OV_HOOKCRHOOK, true)) ? va(" (%d)", votes) : ""));
+
+	veto = is_admins_vote(OV_HOOKCRHOOK);
+
+	if (veto || !get_votes_req(OV_HOOKCRHOOK, true))
+	{
+		cvar_fset("k_ctf_hookstyle", 4);
+		G_bprint(2, "%s\n", redtext(va("hook style set to crhook by %s", veto ? "admin veto" : "majority vote")));
+		vote_clear(OV_HOOKCRHOOK);
+		return;
+	}
+}
+
 // }
 
 // { antilag vote feature
 
-void vote_check_antilag()
+void vote_check_antilag(void)
 {
 	int veto;
 
@@ -1206,35 +1296,39 @@ void vote_check_antilag()
 
 	if (veto || !get_votes_req(OV_ANTILAG, true))
 	{
+		int new_antilag_value;
+
 		vote_clear(OV_ANTILAG);
 
 		// toggle antilag mode.
-		trap_cvar_set_float("sv_antilag", (float)(cvar("sv_antilag") ? 0 : 2));
+		new_antilag_value = cvar("sv_antilag") + 1;
+		if (new_antilag_value > 2)
+			new_antilag_value = 0;
+		trap_cvar_set_float("sv_antilag", (float)(new_antilag_value));
 
 		if (veto)
 		{
 			G_bprint(
 					2, "%s\n",
-					redtext(va("Antilag mode %s by admin veto", OnOff(2 == cvar("sv_antilag")))));
+					redtext(va("Antilag mode %s by admin veto", AntilagModeString(new_antilag_value))));
 		}
 		else
 		{
 			G_bprint(
 					2,
 					"%s\n",
-					redtext(va("Antilag mode %s by majority vote",
-								OnOff(2 == cvar("sv_antilag")))));
+					redtext(va("Antilag mode %s by majority vote", AntilagModeString(new_antilag_value))));
 		}
 	}
 }
 
-void antilag()
+void antilag(void)
 {
-	int votes;
+	int votes, antilag_new_value;
 
 	if (match_in_progress)
 	{
-		G_sprint(self, 2, "%s mode %s\n", redtext("Antilag"), OnOff(2 == cvar("sv_antilag")));
+		G_sprint(self, 2, "%s mode %s\n", redtext("Antilag"), AntilagModeString(cvar("sv_antilag")));
 
 		return;
 	}
@@ -1253,12 +1347,16 @@ void antilag()
 
 	self->v.antilag = !self->v.antilag;
 
+	antilag_new_value = cvar("sv_antilag") + 1;
+	if (antilag_new_value > 2)
+		antilag_new_value = 0;
+
 	G_bprint(
 			2,
 			"%s %s!%s\n",
 			self->netname,
 			(self->v.antilag ?
-					redtext(va("votes for antilag %s", OnOff(!(2 == cvar("sv_antilag"))))) :
+					redtext(va("votes for antilag %s", AntilagModeString(antilag_new_value))) :
 					redtext(va("withdraws %s antilag vote", g_his(self)))),
 			((votes = get_votes_req(OV_ANTILAG, true)) ? va(" (%d)", votes) : ""));
 
@@ -1435,7 +1533,7 @@ qbool private_game_by_default(void)
 	return cvar("k_privategame_default");
 }
 
-void vote_check_swapall()
+void vote_check_swapall(void)
 {
 	int veto;
 	gedict_t *p;
@@ -1492,4 +1590,138 @@ void vote_check_all(void)
 	vote_check_antilag();
 	vote_check_privategame();
 	vote_check_swapall();
+}
+
+void SuggestColorVote(void)
+{
+	gedict_t *p, *electguard, *users[MAX_CLIENTS];
+	char temp[32], message[1024];
+	int i, j, till, argc = trap_CmdArgc();
+
+	if (self->ct == ctSpec && match_in_progress)
+	{
+		return;
+	}
+
+	if (is_elected(self, etSuggestColor))
+	{
+		G_bprint(2, "%s %s!\n", self->netname, redtext("aborts election"));
+		AbortElect();
+		return;
+	}
+
+	if (CountPlayers() < 3)
+	{
+		G_sprint(self, 2, "Not enough players\n");
+		return;
+	}
+
+	if (get_votes(OV_ELECT))
+	{
+		G_sprint(self, 2, "An election is already in progress\n");
+		return;
+	}
+
+	if ((till = Q_rint(self->v.elect_block_till - g_globalvars.time)) > 0)
+	{
+		G_sprint(self, 2, "Wait %d second%s!\n", till, count_s(till));
+		return;
+	}
+
+	if (argc < 4)
+	{
+		G_sprint(self, 2, "suggestcolor <top color> <bottom color> <name / user id>...\n");
+		return;
+	}
+
+	memset(&suggestcolor, 0, sizeof(suggestcolor));
+
+	trap_CmdArgv(1, temp, sizeof(temp));
+	suggestcolor.top = bound(0, atoi(temp), 16);
+
+	trap_CmdArgv(2, temp, sizeof(temp));
+	suggestcolor.bottom = bound(0, atoi(temp), 16);
+
+	suggestcolor.num_userids = 0;
+
+	for (i = 3, j = 0; i < argc && j < MAX_CLIENTS; i++, j++)
+	{
+		trap_CmdArgv(i, temp, sizeof(temp));
+
+		p = player_by_IDorName(temp);
+		if (p == NULL)
+		{
+			G_bprint(2, "%s is not connected to the server\n", temp);
+			return;
+		}
+		else if (p == self)
+		{
+			G_bprint(2, "You can't suggest a color for yourself\n");
+			return;
+		}
+
+		users[j] = p;
+		suggestcolor.userids[j] = GetUserID(p);
+		suggestcolor.num_userids++;
+	}
+
+	snprintf(message, sizeof(message), "%s has requested color %d %d for ",
+		self->netname, suggestcolor.top, suggestcolor.bottom);
+	if (suggestcolor.num_userids == 1)
+	{
+		strlcat(message, users[0]->netname, sizeof(message));
+	}
+	else if (suggestcolor.num_userids == 2)
+	{
+		snprintf(message + strlen(message), sizeof(message) - strlen(message), "%s and %s",
+			users[0]->netname, users[1]->netname);
+	}
+	else
+	{
+		for (i = 0; i < suggestcolor.num_userids - 1; i++)
+		{
+			snprintf(message + strlen(message), sizeof(message) - strlen(message), "%s, ",
+				users[i]->netname);
+		}
+
+		snprintf(message + strlen(message), sizeof(message) - strlen(message), "and %s",
+			users[suggestcolor.num_userids - 1]->netname);
+	}
+	G_bprint(2, "%s\n", message);
+
+	for (p = world; (p = find_plr(p));)
+	{
+		if (p != self)
+		{
+			G_sprint(p, 2, "Type %s in console to approve\n", redtext("yes"));
+		}
+	}
+
+	G_sprint(self, 2, "Type %s to abort election\n", redtext("suggestcolor"));
+
+	self->v.elect = 1;
+	self->v.elect_type = etSuggestColor;
+
+	electguard = spawn();
+	electguard->s.v.owner = EDICT_TO_PROG(world);
+	electguard->classname = "electguard";
+	electguard->think = (func_t)ElectThink;
+	electguard->s.v.nextthink = g_globalvars.time + 60;
+}
+
+void SuggestColorApply(void)
+{
+	gedict_t *p;
+	int i;
+
+	for (i = 0; i < suggestcolor.num_userids; i++)
+	{
+		if ((p = player_by_id(suggestcolor.userids[i])) != NULL)
+		{
+			G_bprint(2, "Setting color %d %d on %s\n",
+				suggestcolor.top, suggestcolor.bottom, p->netname);
+			stuffcmd_flags(p, STUFFCMD_IGNOREINDEMO, "color %d %d\n",
+				suggestcolor.top, suggestcolor.bottom);
+		}
+	}
 }

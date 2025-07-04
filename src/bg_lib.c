@@ -7,6 +7,7 @@
 // bg_lib.c -- standard C library replacement routines used by code
 // compiled for the virtual machine
 #include "q_shared.h"
+#include "rng.h"
 
 size_t strlen(const char *string)
 {
@@ -177,18 +178,16 @@ double fabs(double x)
 }
 
 //=====================================
-static int randSeed = 0;
+static RngState rng_state = { 0 };
 
 void srand(unsigned seed)
 {
-	randSeed = seed;
+	rng_seed(&rng_state, (int)seed);
 }
 
 int rand(void)
 {
-	randSeed = (69069 * randSeed + 1);
-
-	return (randSeed & 0x7fff);
+	return (int)rng_next(&rng_state);
 }
 
 //=====================================
@@ -887,4 +886,18 @@ int snprintf(char *buffer, size_t count, char const *format, ...)
 	va_end(argptr);
 
 	return ret;
+}
+
+double fmod(double x, double y) {
+	double result = x;
+	if (y == 0.0) {
+		return 0.0 / 0.0; // Undefined
+	}
+	while (result >= y) {
+		result -= y;
+	}
+	while (result < 0) {
+		result += y;
+	}
+	return result;
 }

@@ -442,7 +442,7 @@ static qbool PreWarBlockFiring(gedict_t *self)
 		gedict_t *enemy = &g_edicts[self->s.v.enemy];
 		qbool enemy_is_world = self->s.v.enemy && enemy->ct == ctNone;
 		qbool looking_at_enemy = enemy == self->fb.look_object;
-		qbool enemy_attacked = self->s.v.enemy && g_globalvars.time < enemy->attack_finished + 0.5;
+		qbool enemy_attacked = self->s.v.enemy && enemy->client_time < enemy->attack_finished + 0.5;
 		qbool debugging_door = (self->fb.debug_path && enemy_is_world);
 
 		// Don't fire at other bots
@@ -476,7 +476,7 @@ static qbool PreWarBlockFiring(gedict_t *self)
 
 qbool AttackFinished(gedict_t *self)
 {
-	if (g_globalvars.time < self->attack_finished)
+	if (self->client_time < self->attack_finished)
 	{
 		if ((int)self->s.v.weapon & (IT_LIGHTNING | IT_EITHER_NAILGUN))
 		{
@@ -724,7 +724,7 @@ static int DesiredWeapon(void)
 	qbool shaft_available = false;
 	qbool avoid_rockets = false;
 	qbool firing_lg = self->fb.firing && self->s.v.weapon == IT_LIGHTNING && self->s.v.ammo_cells
-			&& g_globalvars.time < self->attack_finished;
+			&& self->client_time < self->attack_finished;
 
 	if (cvar("k_smashmode"))
 		has_lg = false; // not fun dealing with frogbot shafts when there are no walls to LOS them
@@ -909,8 +909,31 @@ static int DesiredWeapon(void)
 	return IT_AXE;
 }
 
+static int WeaponToImpulse(int weapon)
+{
+	static int weapons[] = {
+		IT_AXE, IT_SHOTGUN, IT_SUPER_SHOTGUN,
+		IT_NAILGUN, IT_SUPER_NAILGUN, IT_GRENADE_LAUNCHER,
+		IT_ROCKET_LAUNCHER, IT_LIGHTNING };
+	int i;
+
+	for (i = 0; i < sizeof(weapons) / sizeof(weapons[0]); ++i)
+	{
+		if (weapons[i] == weapon)
+		{
+			return i + 1;
+		}
+	}
+
+	return -1;
+}
+
 void SelectWeapon(void)
 {
+	int desired_weapon;
+	int fb_weapon;
+	int impulse;
+
 	if (self->fb.path_state & DM6_DOOR)
 	{
 		return;
@@ -930,7 +953,22 @@ void SelectWeapon(void)
 		self->fb.state &= ~HURT_SELF;
 	}
 
-	CheckNewWeapon(DesiredWeapon());
+	desired_weapon = DesiredWeapon();
+	CheckNewWeapon(desired_weapon);
+
+	if (tot_mode_enabled())
+	{
+		if ((fb_weapon = FrogbotWeapon()))
+		{
+			self->fb.desired_weapon_impulse = fb_weapon;
+		}
+		else
+		{
+			impulse = WeaponToImpulse(desired_weapon);
+			self->fb.desired_weapon_impulse =
+				self->fb.random_desired_weapon_impulse == impulse ? impulse : 2;
+		}
+	}
 }
 
 #endif // BOT_SUPPORT

@@ -174,6 +174,12 @@
 #define MSG_ONE							1			// reliable to one (msg_entity)
 #define MSG_ALL							2			// reliable to all
 #define MSG_INIT						3			// write to the init string
+#define MSG_ENTITY						5			// for csqc
+
+#define NENT_PROJECTILE					10
+#define NENT_WEAPONPRED					20
+
+
 
 // message levels
 #define PRINT_LOW						0			// pickup messages

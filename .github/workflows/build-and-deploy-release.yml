@@ -38,8 +38,8 @@ jobs:
            ext: ".dll"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Prepare Build Environemnt
+        uses: actions/checkout@v4
+      - name: Prepare Build Environment
         run: |
              sudo apt-get update
              sudo apt-get -y install build-essential cmake gcc-i686-linux-gnu
@@ -55,19 +55,20 @@ jobs:
         run: |
              mkdir -p release/${{ matrix.os }}/${{ matrix.arch }}
              cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} release/${{ matrix.os }}/${{ matrix.arch }}/qwprogs${{ matrix.ext }}
+             cp build/${{ matrix.target }}/qwprogs.md5 release/${{ matrix.os }}/${{ matrix.arch }}/qwprogs.md5
       - name: Archive production artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}_${{ matrix.arch }}
           path:
-            build/${{ matrix.target }}/qwprogs${{ matrix.ext }}
+            release/${{ matrix.os }}/${{ matrix.arch }}
   create:
     needs: build
     if: github.repository == 'KovaaK/ktx'
     runs-on: ubuntu-latest
     steps:
       - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: release
       - name: list

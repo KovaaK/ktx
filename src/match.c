@@ -660,7 +660,7 @@ void PackTouch(void)
 	ent_remove(self);
 }
 
-void SpawnPack()
+void SpawnPack(void)
 {
 	gedict_t *spot;
 	gedict_t *item;

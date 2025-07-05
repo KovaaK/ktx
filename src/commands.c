@@ -137,7 +137,7 @@ void VotePickup(void);
 void UserMode(float umode);
 void Wp_Reset(void);
 void Wp_Stats(float on);
-void ToggleAutoGrabLedge();
+void ToggleAutoGrabLedge(void);
 void GrabLedge(float on);
 void Sc_Stats(float on);
 void t_jump(float j_type);
@@ -5193,7 +5193,7 @@ void Wp_Stats(float on)
 	self->wp_stats_time = g_globalvars.time; // force show/hide
 }
 
-void ToggleAutoGrabLedge()
+void ToggleAutoGrabLedge(void)
 {
 	if (iKey(self, "disableautograb"))
 	{

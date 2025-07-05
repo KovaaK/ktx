@@ -616,7 +616,7 @@ void CheckOvertime(void)
 	}
 }
 
-void PackTouch()
+void PackTouch(void)
 {
 	if (other->ct != ctPlayer)
 	{
@@ -697,7 +697,7 @@ void SpawnPack()
 	sound(item, CHAN_VOICE, "items/suit.wav", 1, ATTN_NORM);	// play respawn sound
 }
 
-void PackmanTimerThink()
+void PackmanTimerThink(void)
 { // Called every 1s
 	gedict_t *p;
 	int packmanCount = 0;

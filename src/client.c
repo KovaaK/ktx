@@ -905,7 +905,7 @@ void SP_info_player_deathmatch(void)
 	setsize(self, 0, 0, 0, 0, 0, 0);
 }
 
-void SP_info_bagspawn()
+void SP_info_bagspawn(void)
 {
 	gedict_t *spot;
 	vec3_t saved_org;
@@ -2679,7 +2679,7 @@ void PlayerDeathThink(void)
 	k_respawn(self, true);
 }
 
-void SmashDoubleJump()
+void SmashDoubleJump(void)
 {
 	vec3_t source, dest;
 	
@@ -3757,14 +3757,14 @@ void ZeroFpsStats(void)
 
 void mv_playback(void);
 
-void Grab()
+void Grab(void)
 {
 	self->has_double_jump = true;
 	self->is_grabbing = true;
 	self->grab_time = g_globalvars.time + 1; // block grab for 1s
 }
 
-void CheckLedgeGrab()
+void CheckLedgeGrab(void)
 {
 	vec3_t source, dest, dest2;
 
@@ -3811,7 +3811,7 @@ void CheckLedgeGrab()
 
 }
 
-void CheckCancelGrab()
+void CheckCancelGrab(void)
 {
 	vec3_t source, dest, dest2;
 	
@@ -3849,7 +3849,7 @@ void CheckCancelGrab()
 	}
 }
 
-void SmashPre()
+void SmashPre(void)
 {
 	if (((int)(self->s.v.flags)) & FL_ONGROUND)
 	{

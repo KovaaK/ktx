@@ -4347,7 +4347,7 @@ const char _1on1sm_um_init[] =      // SmashMode rules
 	"coop 0\n"						// no coop
 	"maxclients 2\n"				// duel = two players
 	"k_maxclients 2\n"				// duel = two players
-	"fraglimit 10\n"				// 
+	"fraglimit 5\n"				// 
 	"timelimit 0\n"					// 
 	"k_smashmode 1\n"				//
 	"k_spw 1\n"						// KT Spawn Safety mode, should be no telefrags

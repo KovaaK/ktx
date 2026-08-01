@@ -982,7 +982,7 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 			nailkick = 1.0;
 		}
 
-		if (cvar("k_smashmode") && match_in_progress == 2 && targ != attacker)
+		if (cvar("k_smashmode") && targ != attacker)
 		{ // smashKBmult is initialized at 1, so assume it's still 1 if these conditions are not met.
 			if (targ->invincible_finished >= g_globalvars.time)
 				smashKBmult = 0;
@@ -1087,7 +1087,7 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	}
 
 	// show damage in sbar
-	if ((match_in_progress != 2) && ISLIVE(targ) && !k_matchLess)
+	if ((match_in_progress != 2) && ISLIVE(targ) && !k_matchLess && !cvar("k_smashmode"))
 	{
 		if (!midair || ((int)targ->s.v.flags & FL_ONGROUND))
 		{

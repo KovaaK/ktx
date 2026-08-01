@@ -4826,7 +4826,11 @@ void PlayerPostThink(void)
 
 		if (!match_in_progress && !match_over && !k_captains && !k_matchLess && !isHoonyModeAny())
 		{
-			if (iKey(self, "kf") & KF_SPEED)
+			if (cvar("k_smashmode"))
+			{
+    			self->s.v.frags = 0;   // leave armorvalue alone, it's the damage %
+			}
+			else if (iKey(self, "kf") & KF_SPEED)
 			{
 				float velocity_vert_abs = fabs(self->s.v.velocity[2]);
 

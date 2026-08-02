@@ -5369,6 +5369,39 @@ float Instagib_Obituary(gedict_t *targ, gedict_t *attacker)
 	return playerheight;
 }
 
+// Everything that happens when a player takes possession of the pack.
+// Callers keep their own centerprint/sound.
+void SmashGivePack(gedict_t *p)
+{
+	p->haspack = true;
+	p->pack_pickup_time = g_globalvars.time;
+	p->s.v.armorvalue = max(0, p->s.v.armorvalue - 200);
+	p->ps.pack_holds++;
+}
+
+// k_packtokiller 2: the pack goes to whoever on `team` has held it the fewest
+// times this match, ties broken by entity order, so the sequence repeats stably
+// and nobody is skipped.  Falls back to `fallback` if nobody on the team is up.
+static gedict_t *PackNextOnTeam(char *team, gedict_t *fallback)
+{
+	gedict_t *p, *best = NULL;
+
+	for (p = world; (p = find_plr_same_team(p, team));)
+	{
+		if (!ISLIVE(p))
+		{
+			continue;
+		}
+
+		if (!best || (p->ps.pack_holds < best->ps.pack_holds))
+		{
+			best = p;
+		}
+	}
+
+	return best ? best : fallback;
+}
+
 void SmashObituary(gedict_t *targ, gedict_t *attacker)
 {
 	char *deathstring, *deathstring2, *deathstring3;
@@ -5467,11 +5500,13 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 
 		if (targ->haspack && cvar("k_packtokiller") && g_globalvars.time - targ->pack_pickup_time > 2)
 		{
-			last_attacker->haspack = true;
-			last_attacker->pack_pickup_time = g_globalvars.time;
-			last_attacker->s.v.armorvalue = max(0, last_attacker->s.v.armorvalue - 200);
+			gedict_t *recipient = ((cvar("k_packtokiller") == 2) && isTeam())
+				? PackNextOnTeam(getteam(last_attacker), last_attacker)
+				: last_attacker;
+
 			targ->haspack = false;
-			G_cp2all("%s now has the pack!", attackername);
+			SmashGivePack(recipient);
+			G_cp2all("%s now has the pack!", recipient->netname);
 		}
 
 		return;
@@ -5810,11 +5845,13 @@ void ClientObituary(gedict_t *targ, gedict_t *attacker)
 				deathstring = " was telefragged by ";
 				if (targ->haspack && cvar("k_packtokiller") && g_globalvars.time - targ->pack_pickup_time > 2)
 				{
-					attacker->haspack = true;
-					attacker->pack_pickup_time = g_globalvars.time;
-					attacker->s.v.armorvalue = max(0, attacker->s.v.armorvalue - 200);
+					gedict_t *recipient = ((cvar("k_packtokiller") == 2) && isTeam())
+						? PackNextOnTeam(getteam(attacker), attacker)
+						: attacker;
+
 					targ->haspack = false;
-					G_cp2all("%s now has the pack!", attackername);
+					SmashGivePack(recipient);
+					G_cp2all("%s now has the pack!", recipient->netname);
 				}
 			}
 			else if (dtSQUISH == targ->deathtype)

@@ -211,6 +211,8 @@ typedef struct player_stats_s
 	int lgc_undershaft;		// cells fired before hitting target
 	int lgc_overshaft;		// cells fired after killing target
 
+	// smash mod pack hold count for packtokiller==2
+	int pack_holds;
 } player_stats_t;
 
 typedef enum

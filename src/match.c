@@ -41,6 +41,8 @@ extern int g_matchstarttime;
 qbool initial_match_spawns;
 int maxPlayerCount;
 
+void SmashGivePack(gedict_t *p);
+
 // Return count of players which have state cs_connected or cs_spawned.
 // It is weird because used string comparision so I treat it as slow and idiotic but it return more players than CountPlayers().
 int WeirdCountPlayers(void)
@@ -648,9 +650,7 @@ void PackTouch(void)
 		self->s.v.nextthink = g_globalvars.time + 90;
 	}
 
-	other->haspack = true;
-	other->pack_pickup_time = g_globalvars.time;
-	other->s.v.armorvalue = max(0, other->s.v.armorvalue - 200);
+	SmashGivePack(other);
 
 	cl_refresh_plus_scores(other); // update players status bar faster.  Not sure if relevant.
 

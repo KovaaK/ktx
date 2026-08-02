@@ -4300,7 +4300,7 @@ const char _tdmsmbm_um_init[] =     // SmashMode Packman TDM rules
 	"k_disallow_weapons 0\n"		// don't disallow any weapons
 	"k_packman 1\n"					//
 	"k_packwarranty 0\n"			//
-	"k_packtokiller 1\n"			//
+	"k_packtokiller 2\n"			//
 	"teamplay 1\n"					// 
 	"deathmatch 4\n"				// weapons stay
 	"k_disallow_weapons 0\n"		// don't disable GL
@@ -9045,12 +9045,36 @@ void ToggleSmashArena(void)
 
 void TogglePackToKiller(void)
 {
+	int packtokiller = bound(0, cvar("k_packtokiller"), 2);
+	int modes = (isTeam() ? 3 : 2);
+
 	if (!is_rules_change_allowed())
 	{
 		return;
 	}
 
-	cvar_toggle_msg(self, "k_packtokiller", redtext("Pack Awarded to Killer"));
+	if (++packtokiller >= modes)
+	{
+		packtokiller = 0;
+	}
+
+	switch (packtokiller)
+	{
+		case 2:
+			G_bprint(2, "Pack rotates through the %s\n", redtext("killer's team"));
+			break;
+
+		case 1:
+			G_bprint(2, "Pack awarded to the %s\n", redtext("killer"));
+			break;
+
+		case 0:
+		default:
+			G_bprint(2, "Pack %s awarded on a kill\n", redtext("not"));
+			break;
+	}
+
+	cvar_fset("k_packtokiller", packtokiller);
 }
 
 void Spawn666Time(void)

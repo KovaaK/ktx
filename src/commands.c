@@ -4370,8 +4370,8 @@ const char _1on1sm_um_init[] =      // SmashMode rules
 
 const char _tdmsm_um_init[] =
 	"coop 0\n"						// no coop
-	"maxclients 4\n"				// 
-	"k_maxclients 4\n"				// 
+	"maxclients 8\n"				// 
+	"k_maxclients 8\n"				// 
 	"fraglimit 0\n"					// 
 	"timelimit 5\n"					// 
 	"k_smashmode 1\n"				//

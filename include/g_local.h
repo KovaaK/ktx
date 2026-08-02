@@ -922,6 +922,8 @@ void CA_Frame(void);
 void CA_PutClientInServer(void);
 qbool CA_can_fire(gedict_t *p);
 
+void SmashPutClientInServer(void);
+
 // captain.c
 
 int capt_num(gedict_t *p);

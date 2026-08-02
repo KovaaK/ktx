@@ -1289,7 +1289,8 @@ void CA_player_pre_think(void)
 		}
 
 		// take no damage to health/armor within 1 second of respawn or during endround
-		if (self->in_play && ((self->alive_time >= 1) || !self->round_deaths) && !ca_round_pause)
+		// smash uses its own spawn invulnerability instead, dropped by the first attack
+		if (self->in_play && (cvar("k_smashmode") || (self->alive_time >= 1) || !self->round_deaths) && !ca_round_pause)
 		{
 			self->no_pain = false;
 		}

@@ -1881,6 +1881,39 @@ void ClientConnect(void)
 #endif
 }
 
+// Smash per-spawn reset.  Called from every spawn path: PutClientInServer()
+// returns early for CA and RA, so those modes never reached the inline version.
+void SmashPutClientInServer(void)
+{
+	if (!cvar("k_smashmode"))
+	{
+		return;
+	}
+
+	self->invincible_time = 0;
+	self->invincible_finished = 0;
+	self->super_time = 0;
+	self->super_damage_finished = 0;
+	self->s.v.items = (int)self->s.v.items & ~( IT_KEY1 |
+		IT_KEY2 | IT_INVISIBILITY | IT_SUIT | IT_QUAD | IT_SUPERHEALTH);
+
+	// short spawn protection, dropped by the player's first attack (W_WeaponFrame)
+	if (match_in_progress && ISLIVE(self))
+	{
+		self->s.v.items = (int)self->s.v.items | IT_INVULNERABILITY;
+		self->invincible_time = 1;
+		self->invincible_finished = g_globalvars.time + 2;
+	}
+	else
+	{
+		self->s.v.items = (int)self->s.v.items & ~IT_INVULNERABILITY;
+	}
+
+	self->s.v.armorvalue = 0;
+	self->last_attacker = self;
+	self->wants_to_grab = !iKey(self, "disableautograb");
+}
+
 ////////////////
 // GlobalParams:
 // time
@@ -2103,6 +2136,7 @@ void PutClientInServer(void)
 	if (isCA())
 	{
 		CA_PutClientInServer();
+		SmashPutClientInServer();
 		W_SetCurrentAmmo(); // important shit, not only ammo
 		teleport_player(self, self->s.v.origin, self->s.v.angles, tele_flags);
 
@@ -2134,6 +2168,7 @@ void PutClientInServer(void)
 	if (isRA())
 	{
 		ra_PutClientInServer();
+		SmashPutClientInServer();
 
 		// drop down to best weapon actually hold
 		if (!((int)self->s.v.weapon & (int)self->s.v.items))
@@ -2451,24 +2486,7 @@ void PutClientInServer(void)
 	}
 
 
-	if (cvar("k_smashmode"))
-	{
-		self->invincible_time = 0;
-		self->invincible_finished = 0;
-		self->super_time = 0;
-		self->super_damage_finished = 0;
-		self->s.v.items = (int)self->s.v.items & ~( IT_KEY1 |
-			IT_KEY2 | IT_INVISIBILITY | IT_SUIT | IT_QUAD | IT_SUPERHEALTH);
-
-		if (match_in_progress)
-		{
-			items |= IT_INVULNERABILITY;
-			self->invincible_time = 1;
-			self->invincible_finished = g_globalvars.time + 2;
-		}
-		self->s.v.armorvalue = 0;
-		self->last_attacker = self;
-	}
+	SmashPutClientInServer();
 	self->wants_to_grab = !iKey(self, "disableautograb"); // reset state of grab according to player pref
 
 	// remove particular weapons in dmm4
@@ -5358,6 +5376,15 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 	gedict_t *last_attacker;
 	
 	last_attacker = targ->last_attacker;	
+	// last_attacker is only meaningful while it is still a connected player: it can
+	// be unset (spawn paths that never ran the smash reset) or stale from an earlier
+	// round or a disconnected client.  Fall through to the self-death case instead.
+	if (!last_attacker || (last_attacker->ct != ctPlayer)
+			|| strneq(last_attacker->classname, "player"))
+	{
+		last_attacker = targ;
+	}
+
 	attackername = last_attacker->netname;
 	victimname = targ->netname;
 	
@@ -5374,7 +5401,7 @@ void SmashObituary(gedict_t *targ, gedict_t *attacker)
 			switch ((int)(g_random() * 4))
 			{
 			case 0:
-				deathstring = va(" checks %s glasses", g_his(attacker));
+				deathstring = va(" checks %s glasses", g_his(last_attacker));
 				break;
 
 			case 1:

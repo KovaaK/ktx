@@ -948,12 +948,12 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 			}
 		}
 		
-		// Getting hit always drops an active grab.  k_smashgrablock (seconds, 0 = off)
+		// Getting hit always drops an active grab.  k_grablock (seconds, 0 = off)
 		// additionally blocks re-grabbing after any enemy hit, so a player can't cancel
 		// knockback by grabbing the ledge on the way out.  Self damage is exempt to keep
 		// rocket jumps a movement tool, as is damage absorbed by invulnerability, which
 		// applies no knockback to cancel in the first place.
-		grab_lockout = cvar("k_smashgrablock");
+		grab_lockout = cvar("k_grablock");
 
 		if ((grab_lockout > 0) && (attacker != targ)
 				&& (targ->invincible_finished <= g_globalvars.time))

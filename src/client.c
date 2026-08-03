@@ -1916,7 +1916,7 @@ void SmashPutClientInServer(void)
 	// a grab in progress doesn't survive a respawn, and neither does the lockout a
 	// killing blow left behind: without this the fresh spawn either has its velocity
 	// zeroed by SmashPre until CheckCancelGrab's traces clear it, or silently can't
-	// grab for the remainder of k_smashgrablock
+	// grab for the remainder of k_grablock
 	self->is_grabbing = false;
 	self->grab_time = 0;
 }

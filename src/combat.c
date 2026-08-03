@@ -598,8 +598,10 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	}
 
 	// in teamplay 4 we do no armor or health damage to teammates (unless telefrag), but do apply velocity changes
+	// attacker must be a player: world entities like trigger_hurt have no team, which would
+	// otherwise read as "same team" for a player who hasn't picked one yet
 	if (tp_num()
-			== 4&& streq(targteam, attackerteam) && ( isCA() || cvar("k_smashmode") || targ != attacker ) && !TELEDEATH(targ))
+			== 4&& streq(targteam, attackerteam) && (attacker->ct == ctPlayer) && ( isCA() || cvar("k_smashmode") || targ != attacker ) && !TELEDEATH(targ))
 	{
 		tp4teamdmg = true;
 	}
@@ -757,6 +759,14 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 
 	// helps kill player in prewar at "wrong" places
 	if ((match_in_progress != 2) && (native_damage > 450))
+	{
+		take = 99999;
+	}
+
+	// in smash the hurt trigger is the kill mechanic, but health is repurposed as the
+	// damage % readout, so neither the map's trigger_hurt dmg nor the prewar threshold
+	// above can be trusted to kill.  Make it lethal in prewar and mid-round alike.
+	if (cvar("k_smashmode") && (dtTRIGGER_HURT == targ->deathtype))
 	{
 		take = 99999;
 	}

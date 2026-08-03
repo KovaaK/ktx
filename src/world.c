@@ -899,6 +899,7 @@ void FirstFrame(void)
 	RegisterCvarEx("k_smashdmgratio", "8");
 	RegisterCvarEx("k_packselfdmgratio", "1");
 	RegisterCvarEx("k_grablock", "0");
+	RegisterCvarEx("k_axecharge", "0");
 // }
 
 // { freshteams dmm1

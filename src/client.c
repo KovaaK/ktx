@@ -1919,6 +1919,12 @@ void SmashPutClientInServer(void)
 	// grab for the remainder of k_grablock
 	self->is_grabbing = false;
 	self->grab_time = 0;
+
+	// likewise a wind-up in progress: without this a player who died mid-charge would
+	// respawn still charging and get a free swing the moment they let go of +attack
+	self->axe_charging = false;
+	self->axe_charge_start = 0;
+	self->axe_charge_held = 0;
 }
 
 ////////////////
@@ -4830,6 +4836,11 @@ void PlayerPostThink(void)
 
 	// can't predict hook reliably, so just force prediction off for now
 	if (self->s.v.weapon == IT_HOOK)
+		self->client_predflags = PRDFL_FORCEOFF;
+	// same for the charged axe: during a wind-up the server deliberately leaves
+	// attack_finished in the past, which reads to a predicting client as "free to swing"
+	// and makes it re-predict the swing every frame against the held server frame
+	else if ((self->s.v.weapon == IT_AXE) && (cvar("k_axecharge") > 0) && cvar("k_smashmode"))
 		self->client_predflags = PRDFL_FORCEOFF;
 	else if (!readytostart())
 		self->client_predflags = PRDFL_FORCEOFF;

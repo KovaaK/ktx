@@ -123,6 +123,27 @@ qbool SendEntity_Projectile(gedict_t *to, int sendflags)
  W_FireAxe
  ================
  */
+// Smash axe damage.  With k_axecharge on, a swing scales from AXE_DMG_MIN at no charge to
+// AXE_DMG_MAX at full.  Keep the spread narrow: the % added and the knockback both derive
+// from this number (see the native_damage/non_hdp_damage use in T_Damage), so widening it
+// here multiplies out into three effects at once.
+#define AXE_DMG_FLAT	250
+#define AXE_DMG_MIN		200
+#define AXE_DMG_MAX		300
+
+static int W_AxeDamage(void)
+{
+	float charge_time = cvar("k_axecharge");
+
+	if (charge_time <= 0)
+	{
+		return AXE_DMG_FLAT;
+	}
+
+	return (int)(AXE_DMG_MIN
+			+ (AXE_DMG_MAX - AXE_DMG_MIN) * bound(0, self->axe_charge_held / charge_time, 1));
+}
+
 void W_FireAxe(void)
 {
 	vec3_t source, dest;
@@ -180,7 +201,7 @@ void W_FireAxe(void)
 		}
 		if (cvar("k_smashmode"))
 		{
-			damage = 250;
+			damage = W_AxeDamage();
 			sound(self, CHAN_VOICE, "player/batbop02.wav", 1, ATTN_NORM);
 		}
 
@@ -3132,11 +3153,91 @@ captains:
  Called every frame so impulse events can be handled as well as possible
  ============
  */
+/*
+ ============
+ W_AxeChargeFrame
+
+ Charged axe (k_axecharge): +attack winds the swing up, -attack releases it and the
+ hitscan happens on that same frame, so the player no longer has to lead by the 0.2s the
+ stock animation takes to reach player_axe3().
+
+ The release edge has to be seen while button0 is *false*, which is why this runs outside
+ the button0 block in W_WeaponFrame.  Returns true when it has taken over attack handling
+ for this frame.
+ ============
+ */
+static qbool W_AxeChargeFrame(void)
+{
+	if ((cvar("k_axecharge") <= 0) || !cvar("k_smashmode") || (self->s.v.weapon != IT_AXE)
+			|| intermission_running)
+	{
+		if (self->axe_charging)
+		{
+			// cvar toggled off or weapon switched mid-charge: drop the held pose
+			self->axe_charging = false;
+			player_run();
+		}
+
+		return false;
+	}
+
+	if (self->axe_charging)
+	{
+		if (self->s.v.button0)
+		{
+			return true; // still winding up, player_axe_charge() holds the frame
+		}
+
+		// released: fire on this frame, then let the swing animation follow
+		self->axe_charging = false;
+		self->axe_charge_held = self->client_time - self->axe_charge_start;
+		self->lastwepfired = self->s.v.weapon;
+		self->attack_finished = self->client_time + 0.5;
+		self->show_hostile = g_globalvars.time + 1;
+
+		trap_makevectors(self->s.v.v_angle);
+		sound(self, CHAN_WEAPON, "weapons/ax1.wav", 1, ATTN_NORM);
+
+		player_axe3(); // sets the strike frame and calls W_FireAxe() immediately
+
+		return true;
+	}
+
+	if (!self->s.v.button0)
+	{
+		return false;
+	}
+
+	// only begin a wind-up if the player would have been allowed to swing
+	if (!readytostart() || !CA_can_fire(self) || (match_in_progress == 1) || !can_prewar(true))
+	{
+		return false;
+	}
+
+	SuperDamageSound();
+
+	self->axe_charging = true;
+	self->axe_charge_start = self->client_time;
+	self->axe_charge_held = 0;
+
+	player_axe_charge();
+
+	// starting a wind-up counts as the first attack, so it drops spawn protection
+	if (self->invincible_time > g_globalvars.time)
+	{
+		self->invincible_time = 0;
+		self->invincible_finished = 0;
+		self->s.v.items = (int)self->s.v.items & ~( IT_INVULNERABILITY );
+	}
+
+	return true;
+}
+
 void W_WeaponFrame(void)
 {
 	if ((self->spawn_time + 0.05) > g_globalvars.time)
 	{
-		return; // discard +attack till 50 ms after respawn, like ktpro 
+		return; // discard +attack till 50 ms after respawn, like ktpro
 	}
 
 	if (self->wreg_attack) // client simulate +attack via "cmd wreg" feature
@@ -3175,6 +3276,11 @@ void W_WeaponFrame(void)
 	}
 
 	if (self->client_time < self->attack_finished)
+	{
+		return;
+	}
+
+	if (W_AxeChargeFrame())
 	{
 		return;
 	}

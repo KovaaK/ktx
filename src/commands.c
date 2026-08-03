@@ -233,6 +233,7 @@ void PackWarrantyTime(void);
 void SmashDamageRatio(void);
 void PackSelfDamageRatio(void);
 void GrabLockout(void);
+void AxeCharge(void);
 
 void noitems(void);
 
@@ -680,6 +681,7 @@ const char CD_NODESC[] = "no desc";
 #define CD_SMASHDAMAGERATIO	"set smash pvp damage ratio"
 #define CD_PACKSELFDAMAGERATIO	"set smash pack self damage ratio"
 #define CD_GRABLOCKOUT		"set post-damage ledge grab lockout"
+#define CD_AXECHARGE		"toggle/set charged axe wind-up time"
 
 #define CD_GIVEME			(CD_NODESC) // skip
 #define CD_DROPITEM			(CD_NODESC) // skip
@@ -1073,6 +1075,7 @@ cmd_t cmds[] =
 	{ "smashdmgratio", 				SmashDamageRatio, 				0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_SMASHDAMAGERATIO },
 	{ "packselfdmgratio", 			PackSelfDamageRatio, 			0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_PACKSELFDAMAGERATIO },
 	{ "grablock", 					GrabLockout, 					0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_GRABLOCKOUT },
+	{ "axecharge", 					AxeCharge, 						0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_AXECHARGE },
 	{ "giveme", 					giveme, 						0, 			CF_PLAYER | CF_MATCHLESS | CF_PARAMS, 									CD_GIVEME },
 	{ "dropitem", 					dropitem, 						0, 			CF_BOTH | CF_PARAMS, 													CD_DROPITEM },
 	{ "removeitem", 				removeitem, 					0, 			CF_BOTH | CF_PARAMS, 													CD_REMOVEITEM },
@@ -9250,6 +9253,51 @@ void GrabLockout(void)
 	G_bprint(2, "%s set %s to %.2fs\n", self->netname, redtext("grab lockout"), grab_lockout);
 
 	trap_cvar_set_float("k_grablock", grab_lockout);
+}
+
+// Charged axe wind-up, in seconds.  No argument toggles the mode on/off like
+// packtokiller; an argument sets the wind-up explicitly for tuning.
+#define AXECHARGE_DEFAULT	1.0
+
+void AxeCharge(void)
+{
+	char arg_2[1024];
+	float axecharge;
+
+	if (!is_rules_change_allowed())
+	{
+		return;
+	}
+
+	if (cvar("k_smashmode") != 1)
+	{
+		G_sprint(self, 2, "command allowed in %s modes only\n", redtext("smash"));
+
+		return;
+	}
+
+	if (trap_CmdArgc() == 1)
+	{
+		// no argument: flip it off, or back on at the default wind-up
+		axecharge = (cvar("k_axecharge") > 0) ? 0 : AXECHARGE_DEFAULT;
+	}
+	else
+	{
+		trap_CmdArgv(1, arg_2, sizeof(arg_2));
+		axecharge = bound(0, atof(arg_2), 3);
+	}
+
+	if (axecharge > 0)
+	{
+		G_bprint(2, "%s set %s to %.2fs wind-up\n", self->netname, redtext("charged axe"),
+					axecharge);
+	}
+	else
+	{
+		G_bprint(2, "%s turned %s %s\n", self->netname, redtext("charged axe"), redtext("off"));
+	}
+
+	trap_cvar_set_float("k_axecharge", axecharge);
 }
 
 void noitems(void)

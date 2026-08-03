@@ -293,6 +293,25 @@ void player_shot6(void)
 	self->s.v.weaponframe = 6;
 }
 
+// Charged axe: sit on the first wind-up frame for as long as +attack is held.  Freezing
+// the body frame is deliberate - the raised axe is the tell that lets the victim react,
+// which is what pays for the easier timing on release.
+void player_axe_charge(void)
+{
+	self->s.v.frame = 119;
+	self->s.v.weaponframe = 1;
+
+	// A held pose has nothing to advance, so park both think chains rather than
+	// re-asserting the frame every 0.1s.  Leaving client_thinkindex mid-swing told
+	// predicting clients to keep animating the axe forward from here.
+	self->client_think = (func_t) player_dummyanim;
+	self->client_nextthink = 0;
+	self->client_thinkindex = 0;
+
+	self->think = (func_t) player_dummyanim;
+	self->s.v.nextthink = g_globalvars.time + 0.1;
+}
+
 void player_axe1(void)
 {
 	self->s.v.frame = 119;

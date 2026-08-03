@@ -31,6 +31,7 @@ void player_shot3(void);
 void player_shot4(void);
 void player_shot5(void);
 void player_shot6(void);
+void player_axe_charge(void);
 void player_axe1(void);
 void player_axe2(void);
 void player_axe3(void);

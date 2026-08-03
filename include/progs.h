@@ -1304,8 +1304,12 @@ typedef struct gedict_s
 	float grab_time;					// lock-out timer for grabbing a ledge
 	qbool is_grabbing; 					// state of actually grabbing a ledge
 	qbool wants_to_grab;				// true when player is holding +grab or has autograb on
-	qbool has_double_jump;				
+	qbool has_double_jump;
 	int last_deathtype;					// on obit, deathtype will be trigger_hurt or tfrag, so we have to track the previous instance of damage that knocked us back.
+	// charged axe (k_axecharge)
+	qbool axe_charging;					// winding up a swing, waiting for -attack
+	float axe_charge_start;				// client_time the wind-up began
+	float axe_charge_held;				// seconds held at release, scales the swing's damage
 	// packman
 	qbool haspack;
 	float pack_pickup_time;	

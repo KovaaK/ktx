@@ -457,6 +457,7 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 	float non_hdp_damage; // save damage before handicap apply for kickback calculation
 	float native_damage = damage; // save damage before apply any modificator
 	float smashKBmult = 1;
+	float grab_lockout;
 	char *attackerteam, *targteam, *attackername, *victimname;
 	qbool tp4teamdmg = false;
 
@@ -947,9 +948,22 @@ void T_Damage(gedict_t *targ, gedict_t *inflictor, gedict_t *attacker, float dam
 			}
 		}
 		
-		//If target was grabbing the ledge, knock him off and block grab timer for 1s
-		if (targ->is_grabbing)
+		// Getting hit always drops an active grab.  k_smashgrablock (seconds, 0 = off)
+		// additionally blocks re-grabbing after any enemy hit, so a player can't cancel
+		// knockback by grabbing the ledge on the way out.  Self damage is exempt to keep
+		// rocket jumps a movement tool, as is damage absorbed by invulnerability, which
+		// applies no knockback to cancel in the first place.
+		grab_lockout = cvar("k_smashgrablock");
+
+		if ((grab_lockout > 0) && (attacker != targ)
+				&& (targ->invincible_finished <= g_globalvars.time))
 		{
+			targ->is_grabbing = false;
+			targ->grab_time = g_globalvars.time + grab_lockout;
+		}
+		else if (targ->is_grabbing)
+		{
+			// knocked off the ledge, blocked from re-grabbing for 1s
 			targ->is_grabbing = false;
 			targ->grab_time = g_globalvars.time + 1;
 		}

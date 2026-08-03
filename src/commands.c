@@ -232,6 +232,7 @@ void Spawn666Time(void);
 void PackWarrantyTime(void);
 void SmashDamageRatio(void);
 void PackSelfDamageRatio(void);
+void SmashGrabLockout(void);
 
 void noitems(void);
 
@@ -678,6 +679,7 @@ const char CD_NODESC[] = "no desc";
 #define CD_PACKWARRANTYTIME	"set smashpack warranty time"
 #define CD_SMASHDAMAGERATIO	"set smash pvp damage ratio"
 #define CD_PACKSELFDAMAGERATIO	"set smash pack self damage ratio"
+#define CD_SMASHGRABLOCKOUT	"set smash post-damage ledge grab lockout"
 
 #define CD_GIVEME			(CD_NODESC) // skip
 #define CD_DROPITEM			(CD_NODESC) // skip
@@ -1070,6 +1072,7 @@ cmd_t cmds[] =
 	{ "packwarrantytime", 			PackWarrantyTime, 				0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_PACKWARRANTYTIME },
 	{ "smashdmgratio", 				SmashDamageRatio, 				0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_SMASHDAMAGERATIO },
 	{ "packselfdmgratio", 			PackSelfDamageRatio, 			0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_PACKSELFDAMAGERATIO },
+	{ "smashgrablock", 				SmashGrabLockout, 				0, 			CF_PLAYER | CF_SPC_ADMIN | CF_PARAMS, 									CD_SMASHGRABLOCKOUT },
 	{ "giveme", 					giveme, 						0, 			CF_PLAYER | CF_MATCHLESS | CF_PARAMS, 									CD_GIVEME },
 	{ "dropitem", 					dropitem, 						0, 			CF_BOTH | CF_PARAMS, 													CD_DROPITEM },
 	{ "removeitem", 				removeitem, 					0, 			CF_BOTH | CF_PARAMS, 													CD_REMOVEITEM },
@@ -9216,6 +9219,37 @@ void PackSelfDamageRatio(void)
 				PackSelfDamageRatio);
 
 	trap_cvar_set_float("k_packselfdmgratio", PackSelfDamageRatio);
+}
+
+void SmashGrabLockout(void)
+{
+	char arg_2[1024];
+	float grab_lockout;
+
+	if (cvar("k_smashmode") != 1)
+	{
+		G_sprint(self, 2, "command allowed in %s modes only\n", redtext("smash"));
+
+		return;
+	}
+
+	// no arguments, show info and return
+	if (match_in_progress || (trap_CmdArgc() == 1))
+	{
+		grab_lockout = bound(0, cvar("k_smashgrablock"), 5);
+
+		G_sprint(self, 2, "%s is %.2fs\n", redtext("grab lockout"), grab_lockout);
+
+		return;
+	}
+
+	trap_CmdArgv(1, arg_2, sizeof(arg_2));
+
+	grab_lockout = bound(0, atof(arg_2), 5);
+
+	G_bprint(2, "%s set %s to %.2fs\n", self->netname, redtext("grab lockout"), grab_lockout);
+
+	trap_cvar_set_float("k_smashgrablock", grab_lockout);
 }
 
 void noitems(void)

@@ -898,6 +898,7 @@ void FirstFrame(void)
 	RegisterCvarEx("k_packwarranty", "0");
 	RegisterCvarEx("k_smashdmgratio", "8");
 	RegisterCvarEx("k_packselfdmgratio", "1");
+	RegisterCvarEx("k_smashgrablock", "0");
 // }
 
 // { freshteams dmm1
